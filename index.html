@@ -1,840 +1,2392 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARAMS - ระบบบริหารงานทะเบียนและวัดผลสถานศึกษา</title>
-    <!-- Google Fonts: Sarabun -->
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SweetAlert2 for notifications -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        :root { 
-            --primary: #2c3e50; 
-            --secondary: #34495e; 
-            --accent: #3498db; 
-            --bg: #f4f6f9; 
-            --danger: #e74c3c; 
-            --success: #2ecc71; 
-            --warning: #f1c40f; 
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
-        body { background-color: var(--bg); color: #333; }
-        .page-section { display: none; } 
-        .page-section.active { display: block; }
-        
-        /* Layout Structure */
-        .app-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 260px; background: var(--primary); color: #fff; padding-top: 20px; flex-shrink: 0; }
-        .sidebar-brand { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
-        .sidebar-menu { list-style: none; }
-        .sidebar-menu li a { display: flex; align-items: center; padding: 12px 20px; color: #ecf0f1; text-decoration: none; font-size: 16px; transition: 0.2s; }
-        .sidebar-menu li a i { margin-right: 10px; width: 20px; text-align: center; }
-        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: var(--secondary); border-left: 4px solid var(--accent); }
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; max-height: 100vh; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        /* Components & Cards */
-        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        table th, table td { padding: 10px; border: 1px solid #ddd; text-align: center; font-size: 15px; }
-        table th { background: #f8f9fa; color: var(--primary); font-weight: 600; }
-        table td.text-left { text-align: left; }
-        
-        /* Form Inputs & Buttons */
-        .input-group { margin-bottom: 15px; } 
-        .input-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
-        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 15px; }
-        .flex-row { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 15px; }
-        
-        .btn { padding: 8px 16px; border: none; border-radius: 5px; font-size: 15px; cursor: pointer; font-weight: 600; color: white; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-primary { background: var(--accent); } 
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); } 
-        .btn-warning { background: var(--warning); color: #333; }
-        .btn-sm { padding: 5px 10px; font-size: 13px; }
-        .btn-logout { background: var(--danger); }
+  <meta charset="UTF-8">
+  <title>ARAMS - ระบบบริหารงานทะเบียนและวัดผล</title>
+  <!-- Google Font: Sarabun & TH Sarabun PSK -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        /* Score Grid Elements */
-        .input-score { width: 65px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-        .input-score.fail { background-color: #ffcccc; color: #d32f2f; font-weight: bold; }
-        .input-score:disabled { background-color: #e9ecef; cursor: not-allowed; }
-        .blink-cell { animation: blinker 1.5s linear infinite; box-shadow: inset 0 0 10px #f1c40f; }
-        @keyframes blinker { 50% { opacity: 0.4; } }
-
-        /* Login Layout */
-        .login-wrapper { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #2c3e50, #3498db); }
-        .login-box { background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 400px; }
-    </style>
+  <style>
+    * {
+      font-family: 'Sarabun', 'TH Sarabun psk', sans-serif;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #f4f6f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      font-size: 16px;
+    }
+    /* Brand Header Theme */
+    .bg-arams {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: #fff;
+    }
+    .btn-arams {
+      background-color: #1e3c72;
+      color: #fff;
+      border: none;
+    }
+    .btn-arams:hover {
+      background-color: #2a5298;
+      color: #fff;
+    }
+    /* Sidebar Layout */
+    #wrapper {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+    #sidebar-wrapper {
+      min-width: 260px;
+      max-width: 260px;
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      transition: all 0.3s;
+    }
+    #sidebar-wrapper .sidebar-heading {
+      padding: 1.2rem 1rem;
+      font-size: 1.25rem;
+      font-weight: bold;
+      background-color: #1a252f;
+      text-align: center;
+      border-bottom: 1px solid #34495e;
+    }
+    #sidebar-wrapper .list-group-item {
+      padding: 0.85rem 1.2rem;
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.2s;
+    }
+    #sidebar-wrapper .list-group-item:hover, #sidebar-wrapper .list-group-item.active {
+      background-color: #34495e;
+      color: #3498db;
+      border-left: 4px solid #3498db;
+    }
+    #page-content-wrapper {
+      flex-grow: 1;
+      background-color: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+    }
+    .navbar-top {
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .content-container {
+      padding: 1.8rem;
+      flex-grow: 1;
+    }
+    .card-custom {
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      background-color: #fff;
+      margin-bottom: 1.5rem;
+    }
+    .card-header-custom {
+      background-color: #fff;
+      border-bottom: 2px solid #f1f1f1;
+      font-weight: 600;
+      font-size: 1.15rem;
+      padding: 1rem 1.25rem;
+      color: #1e3c72;
+    }
+    /* Score Table Specifics */
+    .table-score th {
+      background-color: #eef2f5;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 0.95rem;
+    }
+    .table-score td {
+      vertical-align: middle;
+    }
+    .score-input {
+      width: 70px;
+      text-align: center;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      padding: 4px;
+    }
+    .score-input-disabled {
+      background-color: #e9ecef !important;
+      cursor: not-allowed;
+    }
+    .low-score {
+      background-color: #ffcccc !important;
+    }
+    .blink-cell {
+      animation: blinker 1s linear infinite;
+      background-color: #fff3cd !important;
+      border: 2px solid #ffc107 !important;
+    }
+    @keyframes blinker {
+      50% { opacity: 0.5; }
+    }
+    /* Login Page Layout */
+    .login-container {
+      max-width: 420px;
+      margin: 80px auto;
+      padding: 2.5rem;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .login-logo {
+      font-size: 3rem;
+      color: #1e3c72;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+  </style>
 </head>
 <body>
 
-    <!-- ========================================== -->
-    <!-- 1. LOGIN PAGE                              -->
-    <!-- ========================================== -->
-    <div id="loginPage" class="page-section active">
-        <div class="login-wrapper">
-            <div class="login-box">
-                <h2 style="text-align:center; color:var(--primary); margin-bottom: 10px;"><i class="fas fa-school"></i> ARAMS Login</h2>
-                <p style="text-align:center; color:#666; font-size: 14px; margin-bottom: 25px;">ระบบบริหารจัดการผลการเรียนและทะเบียนวัดผล</p>
-                <form id="loginForm">
-                    <div class="input-group">
-                        <label>ชื่อผู้ใช้ / รหัสนักเรียน</label>
-                        <input type="text" id="username" placeholder="กรอก Username หรือรหัสนักเรียน" required>
-                    </div>
-                    <div class="input-group">
-                        <label>รหัสผ่าน / เลขประจำตัวประชาชน</label>
-                        <input type="password" id="password" placeholder="กรอกรหัสผ่าน" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding: 12px;" id="loginBtn">
-                        <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
-                    </button>
-                </form>
-            </div>
+  <!-- ========================================== -->
+  <!-- 1. LOGIN SCREEN -->
+  <!-- ========================================== -->
+  <div id="loginSection">
+    <div class="login-container">
+      <div class="login-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <h3 class="text-center fw-bold mb-1" style="color: #1e3c72;">ARAMS</h3>
+      <p class="text-center text-muted mb-4" style="font-size: 0.9rem;">ระบบบริหารงานทะเบียนและวัดผล</p>
+      
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="mb-3">
+          <label class="form-label font-weight-bold">ชื่อผู้ใช้ / รหัสประจำตัวนักเรียน</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+            <input type="text" id="loginUsername" class="form-control" placeholder="ป้อนชื่อผู้ใช้" required>
+          </div>
         </div>
-    </div>
-
-
-    <!-- ========================================== -->
-    <!-- 2. ADMIN DASHBOARD                         -->
-    <!-- ========================================== -->
-    <div id="adminPage" class="page-section">
-        <div class="app-container">
-            <div class="sidebar">
-                <div class="sidebar-brand"><i class="fas fa-user-shield"></i> ARAMS - ผู้ดูแลระบบ</div>
-                <ul class="sidebar-menu">
-                    <li class="active" onclick="switchAdminTab('courses', this)"><a href="#"><i class="fas fa-book"></i> จัดการรายวิชา</a></li>
-                    <li onclick="switchAdminTab('teachers', this)"><a href="#"><i class="fas fa-chalkboard-teacher"></i> จัดการคุณครู</a></li>
-                    <li onclick="switchAdminTab('students', this)"><a href="#"><i class="fas fa-user-graduate"></i> จัดการนักเรียน</a></li>
-                    <li onclick="switchAdminTab('workloads', this)"><a href="#"><i class="fas fa-clipboard-list"></i> จัดการภาระงานสอน</a></li>
-                </ul>
-            </div>
-            <div class="main-content">
-                <div class="topbar">
-                    <h2 id="adminTopTitle">ระบบบริหารจัดการหลักสูตรและโครงสร้าง</h2>
-                    <div>
-                        <span id="aUserNameDisplay" style="margin-right:15px; font-weight:bold;"></span>
-                        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-power-off"></i> ออกจากระบบ</button>
-                    </div>
-                </div>
-
-                <!-- Admin Tab: Courses -->
-                <div id="a-tab-courses" class="a-tab">
-                    <div class="card">
-                        <h3>เพิ่มรายวิชาใหม่</h3>
-                        <div class="flex-row" style="margin-top:15px;">
-                            <div class="input-group"><label>รหัสวิชา</label><input type="text" id="cCode" placeholder="เช่น ค31101"></div>
-                            <div class="input-group"><label>ชื่อวิชา</label><input type="text" id="cName" placeholder="คณิตศาสตร์พื้นฐาน"></div>
-                            <div class="input-group"><label>หน่วยกิต</label><input type="text" id="cCredit" placeholder="1.0"></div>
-                            <div class="input-group"><label>ระดับชั้น (ม.)</label><input type="text" id="cLevel" placeholder="4"></div>
-                            <button class="btn btn-primary" onclick="saveCourse()" style="height:42px;"><i class="fas fa-plus"></i> บันทึก</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>รายการรายวิชาทั้งหมด</h3>
-                        <table>
-                            <thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>หน่วยกิต</th><th>ระดับชั้น</th><th>จัดการ</th></tr></thead>
-                            <tbody id="tblCourses"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Admin Tab: Teachers -->
-                <div id="a-tab-teachers" class="a-tab" style="display:none;">
-                    <div class="card">
-                        <h3>เพิ่มบัญชีคุณครู</h3>
-                        <div class="flex-row" style="margin-top:15px;">
-                            <div class="input-group"><label>คำนำหน้า+ชื่อ-นามสกุล</label><input type="text" id="tName" placeholder="นายสมชาย ใจดี"></div>
-                            <div class="input-group"><label>Username</label><input type="text" id="tUser" placeholder="somchai"></div>
-                            <div class="input-group"><label>Password</label><input type="password" id="tPass" placeholder="รหัสผ่าน"></div>
-                            <button class="btn btn-primary" onclick="saveTeacher()" style="height:42px;"><i class="fas fa-plus"></i> บันทึก</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>รายชื่อคุณครูทั้งหมด</h3>
-                        <table>
-                            <thead><tr><th>ชื่อ-นามสกุล</th><th>Username</th><th>จัดการ</th></tr></thead>
-                            <tbody id="tblTeachers"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Admin Tab: Students -->
-                <div id="a-tab-students" class="a-tab" style="display:none;">
-                    <div class="card">
-                        <h3>เพิ่มรายชื่อนักเรียน</h3>
-                        <div class="flex-row" style="margin-top:15px;">
-                            <div class="input-group"><label>รหัสนักเรียน</label><input type="text" id="sId" placeholder="10001"></div>
-                            <div class="input-group"><label>ชื่อ</label><input type="text" id="sFirst" placeholder="เด็กชายรักเรียน"></div>
-                            <div class="input-group"><label>นามสกุล</label><input type="text" id="sLast" placeholder="ดีมาก"></div>
-                            <div class="input-group"><label>เลขบัตรประชาชน (Password)</label><input type="text" id="sNatId" placeholder="เลข 13 หลัก"></div>
-                            <div class="input-group"><label>ม.</label><input type="text" id="sLevel" placeholder="4" style="width:60px;"></div>
-                            <div class="input-group"><label>ห้อง</label><input type="text" id="sRoom" placeholder="1" style="width:60px;"></div>
-                            <button class="btn btn-primary" onclick="saveStudent()" style="height:42px;"><i class="fas fa-plus"></i> บันทึก</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>รายชื่อนักเรียนทั้งหมด</h3>
-                        <table>
-                            <thead><tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>ระดับชั้น</th><th>ห้อง</th><th>จัดการ</th></tr></thead>
-                            <tbody id="tblStudents"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Admin Tab: Workloads -->
-                <div id="a-tab-workloads" class="a-tab" style="display:none;">
-                    <div class="card">
-                        <h3>มอบหมายภาระงานสอนให้คุณครู</h3>
-                        <div class="flex-row" style="margin-top:15px;">
-                            <div class="input-group"><label>เลือกคุณครู</label><select id="wTeacherSelect"></select></div>
-                            <div class="input-group"><label>เลือกรายวิชา</label><select id="wCourseSelect"></select></div>
-                            <div class="input-group"><label>ระดับชั้น</label><input type="text" id="wLevel" placeholder="4"></div>
-                            <div class="input-group"><label>ห้อง</label><input type="text" id="wRoom" placeholder="1"></div>
-                            <button class="btn btn-primary" onclick="saveWorkload()" style="height:42px;"><i class="fas fa-plus"></i> มอบหมาย</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>รายการภาระงานสอนทั้งหมด</h3>
-                        <table>
-                            <thead><tr><th>คุณครู</th><th>รหัสวิชา</th><th>ระดับชั้น</th><th>ห้อง</th><th>จัดการ</th></tr></thead>
-                            <tbody id="tblWorkloads"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
+        <div class="mb-3">
+          <label class="form-label font-weight-bold">รหัสผ่าน / เลขบัตรประชาชน</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+            <input type="password" id="loginPassword" class="form-control" placeholder="ป้อนรหัสผ่าน" required>
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('loginPassword', 'eyeIcon')">
+              <i class="fa-solid fa-eye" id="eyeIcon"></i>
+            </button>
+          </div>
         </div>
-    </div>
-
-
-    <!-- ========================================== -->
-    <!-- 3. TEACHER DASHBOARD                       -->
-    <!-- ========================================== -->
-    <div id="teacherPage" class="page-section">
-        <div class="app-container">
-            <div class="sidebar">
-                <div class="sidebar-brand"><i class="fas id-card"></i> ARAMS - คุณครูผู้สอน</div>
-                <ul class="sidebar-menu">
-                    <li class="active" onclick="switchTeacherTab('scores', this)"><a href="#"><i class="fas fa-edit"></i> บันทึกคะแนน</a></li>
-                    <li onclick="switchTeacherTab('assign', this)"><a href="#"><i class="fas fa-tasks"></i> กำหนดงานแก้ตัว</a></li>
-                    <li onclick="switchTeacherTab('requests', this)"><a href="#"><i class="fas fa-envelope-open-text"></i> คำร้องขอแก้ตัว</a></li>
-                </ul>
-            </div>
-            <div class="main-content">
-                <div class="topbar">
-                    <h2 id="teacherTopTitle">บันทึกคะแนนและผลการเรียน</h2>
-                    <div>
-                        <span id="tUserNameDisplay" style="margin-right:15px; font-weight:bold;"></span>
-                        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-power-off"></i> ออกจากระบบ</button>
-                    </div>
-                </div>
-
-                <!-- Teacher Tab: Scores -->
-                <div id="t-tab-scores" class="t-tab">
-                    <div class="card">
-                        <div class="flex-row">
-                            <div class="input-group" style="width:280px;">
-                                <label>เลือกรายวิชาและระดับชั้น</label>
-                                <select id="selTCourse"></select>
-                            </div>
-                            <div class="input-group" style="width:150px;">
-                                <label>ห้อง</label>
-                                <input type="text" id="selTRoom" placeholder="1 หรือ ทุกห้อง" value="1">
-                            </div>
-                            <button class="btn btn-primary" onclick="searchTeacherScores()" style="height:42px;"><i class="fas fa-search"></i> ค้นหาตารางคะแนน</button>
-                        </div>
-                    </div>
-
-                    <div class="card" id="scoreGridSection" style="display:none;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                            <div>
-                                <button class="btn btn-success" onclick="addScoreColumn()"><i class="fas fa-plus"></i> เพิ่มช่องคะแนนเก็บ</button>
-                                <button class="btn btn-warning" onclick="toggleScoreVisibility()"><i class="fas fa-eye"></i> ตั้งค่าให้นักเรียนดูได้</button>
-                            </div>
-                            <div>
-                                <button class="btn btn-primary" onclick="saveScoresDB()"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
-                                <button class="btn btn-danger" onclick="submitToSGS()"><i class="fas fa-lock"></i> บันทึกคะแนนไปที่ SGS</button>
-                            </div>
-                        </div>
-                        <p style="color:red; font-size:13px; margin-bottom:10px;">* หากนักเรียนได้คะแนนไม่ถึงครึ่งของคะแนนเต็ม ช่องจะแสดงเป็นสีแดงอ่อนอัตโนมัติ</p>
-                        
-                        <div style="overflow-x:auto;">
-                            <table id="scoreTable">
-                                <thead id="scoreTableHead"></thead>
-                                <tbody id="scoreTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Teacher Tab: Assign Makeup -->
-                <div id="t-tab-assign" class="t-tab" style="display:none;">
-                    <div class="card">
-                        <h3>มอบหมายงานแก้ตัวสำหรับผู้ที่คะแนนไม่ผ่านเกณฑ์</h3>
-                        <div class="input-group" style="margin-top:15px;">
-                            <label>เลือกรายวิชา-ระดับชั้น</label>
-                            <select id="maCourseSelect"></select>
-                        </div>
-                        <div class="input-group">
-                            <label>กำหนดให้ช่องคะแนนใด (Unit Name)</label>
-                            <input type="text" id="maUnitName" placeholder="เช่น บทที่ 1 ระบบสมการ">
-                        </div>
-                        <div class="input-group">
-                            <label>รายละเอียดงาน / คำสั่ง</label>
-                            <textarea id="maDetails" rows="4"></textarea>
-                        </div>
-                        <div class="input-group">
-                            <label>อัปโหลดรูปภาพใบงาน (ถ้ามี)</label>
-                            <input type="file" id="maImageFile" accept="image/*">
-                        </div>
-                        <button class="btn btn-primary" onclick="assignMakeupWork()"><i class="fas fa-paper-plane"></i> ประกาศงานแก้ตัว</button>
-                    </div>
-                </div>
-
-                <!-- Teacher Tab: Requests -->
-                <div id="t-tab-requests" class="t-tab" style="display:none;">
-                    <div class="card">
-                        <h3>รายการคำร้องขอแก้ตัวจากนักเรียน</h3>
-                        <table>
-                            <thead>
-                                <tr><th>รหัสคำร้อง</th><th>รหัสวิชา</th><th>รหัสนักเรียน</th><th>ช่องคะแนน</th><th>คะแนนเดิม</th><th>สถานะ</th><th>จัดการ</th></tr>
-                            </thead>
-                            <tbody id="tblTeacherRequests"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
+        <div class="form-check mb-4">
+          <input class="form-check-input" type="checkbox" id="rememberMe">
+          <label class="form-check-label" for="rememberMe">จดจำการเข้าสู่ระบบ</label>
         </div>
+        <button type="submit" class="btn btn-arams w-100 py-2 font-weight-bold">เข้าสู่ระบบ <i class="fa-solid fa-right-to-bracket ms-1"></i></button>
+      </form>
     </div>
+  </div>
 
-
-    <!-- ========================================== -->
-    <!-- 4. STUDENT DASHBOARD                       -->
-    <!-- ========================================== -->
-    <div id="studentPage" class="page-section">
-        <div class="app-container">
-            <div class="sidebar">
-                <div class="sidebar-brand"><i class="fas fa-graduation-cap"></i> ARAMS - นักเรียน</div>
-                <ul class="sidebar-menu">
-                    <li class="active"><a href="#"><i class="fas fa-book-open"></i> ผลการเรียนของฉัน</a></li>
-                </ul>
-            </div>
-            <div class="main-content">
-                <div class="topbar">
-                    <h2>ตรวจสอบผลการเรียน และงานแก้ตัว</h2>
-                    <div>
-                        <span id="sUserNameDisplay" style="margin-right:15px; font-weight:bold;"></span>
-                        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-power-off"></i> ออกจากระบบ</button>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3 style="margin-bottom:15px;"><i class="fas fa-graduation-cap"></i> รายวิชาที่กำลังศึกษา</h3>
-                    <table>
-                        <thead>
-                            <tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>คะแนนเก็บ (ที่ประกาศแล้ว)</th><th>รวม</th><th>เกรด</th></tr>
-                        </thead>
-                        <tbody id="tblStudentScoresBody"></tbody>
-                    </table>
-                </div>
-            </div>
+  <!-- ========================================== -->
+  <!-- 2. MAIN APPLICATION SPA LAYOUT -->
+  <!-- ========================================== -->
+  <div id="appSection" style="display: none;">
+    <div id="wrapper">
+      
+      <!-- Sidebar Navigation -->
+      <div id="sidebar-wrapper">
+        <div class="sidebar-heading">
+          <i class="fa-solid fa-book-bookmark me-2"></i>ARAMS SYSTEM
         </div>
-    </div>
-
-
-    <!-- ========================================== -->
-    <!-- 5. HEAD ACADEMIC DASHBOARD                 -->
-    <!-- ========================================== -->
-    <div id="headPage" class="page-section">
-        <div class="app-container">
-            <div class="sidebar">
-                <div class="sidebar-brand"><i class="fas fa-check-double"></i> หัวหน้าวิชาการ</div>
-                <ul class="sidebar-menu">
-                    <li class="active"><a href="#"><i class="fas fa-clipboard-check"></i> อนุมัติแก้ตัว (SGS)</a></li>
-                </ul>
-            </div>
-            <div class="main-content">
-                <div class="topbar">
-                    <h2>คำร้องรออนุมัติขั้นสุดท้ายเข้าสู่ระบบ SGS</h2>
-                    <div>
-                        <span id="hUserNameDisplay" style="margin-right:15px; font-weight:bold;"></span>
-                        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-power-off"></i> ออกจากระบบ</button>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <table>
-                        <thead>
-                            <tr><th>รหัสคำร้อง</th><th>รหัสวิชา</th><th>รหัสนักเรียน</th><th>ช่องคะแนน</th><th>คะแนนเดิม</th><th>จัดการ</th></tr>
-                        </thead>
-                        <tbody id="tblHeadRequestsBody"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="list-group list-group-flush" id="sidebarMenuList">
+          <!-- Dynamic Menu Items based on User Role -->
         </div>
+      </div>
+
+      <!-- Page Content -->
+      <div id="page-content-wrapper">
+        <nav class="navbar-top">
+          <div>
+            <button class="btn btn-light border" id="menuToggleBtn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+            <span class="ms-3 fw-bold text-dark" id="currentRoleTitle">ระบบปฏิบัติการ</span>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div id="notificationBellArea"></div>
+            <div class="text-end">
+              <div class="fw-bold" id="userDisplayName">ผู้ใช้งาน</div>
+              <small class="text-muted" id="userRoleBadge">สิทธิ์เข้าใช้งาน</small>
+            </div>
+            <button class="btn btn-outline-danger btn-sm ms-2" onclick="logout()"><i class="fa-solid fa-right-from-bracket me-1"></i>ออกจากระบบ</button>
+          </div>
+        </nav>
+
+        <div class="content-container" id="mainContentView">
+          <!-- Dynamic Content Views Inject Here -->
+        </div>
+      </div>
+
     </div>
+  </div>
 
+  <!-- Modal Container Template -->
+  <div class="modal fade" id="commonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-arams">
+          <h5 class="modal-title" id="commonModalTitle">จัดการข้อมูล</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="commonModalBody">
+          <!-- Dynamic Form Content -->
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- ========================================== -->
-    <!-- JAVASCRIPT CONTROLLER                      -->
-    <!-- ========================================== -->
-    <script>
-        // กำหนด URL ของ Google Apps Script Web App ที่คุณ Deploy แล้ว
-        const API_URL = "https://script.google.com/macros/s/AKfycbwgG8bb9gooS7ITQ-K1LLBYr4CoNXHyU3E_bGwQQ4V26mWm44StrAa0yKScM4jmmbCdBQ/exec";
-        
-        let currentUser = null;
-        let adminData = { courses: [], teachers: [], students: [], workloads: [] };
-        let tData = { workloads: [], courses: [], settings: [], assignments: [], students: [], scores: [], units: [] };
-        let isSGSSubmitted = false;
-        let stdAssignments = [];
+  <!-- Bootstrap 5 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        window.onload = function() {
-            const saved = localStorage.getItem("arams_user");
-            if(saved) {
-                currentUser = JSON.parse(saved);
-                routeUser(currentUser);
+  <script>
+    // State Management
+    let currentUser = null;
+    let globalDataCache = {};
+    let bsModal = null;
+
+    window.onload = function() {
+      bsModal = new bootstrap.Modal(document.getElementById('commonModal'));
+      checkAutoLogin();
+    };
+
+    function checkAutoLogin() {
+      const savedUser = localStorage.getItem('arams_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        loadUserDashboard();
+      }
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar-wrapper');
+      sidebar.style.display = (sidebar.style.display === 'none') ? 'block' : 'none';
+    }
+
+    // ==========================================
+    // AUTHENTICATION LOGIC
+    // ==========================================
+    function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('loginUsername').value.trim();
+      const p = document.getElementById('loginPassword').value.trim();
+      const remember = document.getElementById('rememberMe').checked;
+
+      Swal.fire({
+        title: 'กำลังเข้าสู่ระบบ...',
+        text: 'โปรดรอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      // Try Staff Login first, then Student Login
+      google.script.run.withSuccessHandler(res => {
+        if (res.success) {
+          currentUser = res.user;
+          if (remember) {
+            localStorage.setItem('arams_user', JSON.stringify(currentUser));
+          }
+          Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', timer: 1200, showConfirmButton: false });
+          loadUserDashboard();
+        } else {
+          // Try Student Login
+          google.script.run.withSuccessHandler(stdRes => {
+            if (stdRes.success) {
+              currentUser = stdRes.user;
+              if (remember) {
+                localStorage.setItem('arams_user', JSON.stringify(currentUser));
+              }
+              Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', timer: 1200, showConfirmButton: false });
+              loadUserDashboard();
+            } else {
+              Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบล้มเหลว', text: res.message });
             }
-        };
+          }).studentLoginByCode(u, p);
+        }
+      }).login(u, p);
+    }
 
-        function logout() {
-            localStorage.removeItem("arams_user");
-            location.reload();
+    function logout() {
+      localStorage.removeItem('arams_user');
+      currentUser = null;
+      document.getElementById('appSection').style.display = 'none';
+      document.getElementById('loginSection').style.display = 'block';
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+      Swal.fire({ icon: 'info', title: 'ออกจากระบบเรียบร้อย', timer: 1000, showConfirmButton: false });
+    }
+
+    // ==========================================
+    // DASHBOARD & MENU ROUTER
+    // ==========================================
+    function loadUserDashboard() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('appSection').style.display = 'block';
+
+      document.getElementById('userDisplayName').innerText = currentUser.prefix + currentUser.fullName;
+      document.getElementById('userRoleBadge').innerText = getRoleLabel(currentUser.role);
+
+      buildSidebarMenu();
+      checkNotifications();
+    }
+
+    function getRoleLabel(role) {
+      const map = {
+        'Admin': 'ผู้จัดการระบบ',
+        'Teacher': 'คุณครูผู้สอน',
+        'Student': 'นักเรียน',
+        'Academic': 'ฝ่ายวิชาการ'
+      };
+      return map[role] || role;
+    }
+
+    function buildSidebarMenu() {
+      const container = document.getElementById('sidebarMenuList');
+      container.innerHTML = '';
+
+      let items = [];
+
+      if (currentUser.role === 'Admin') {
+        items = [
+          { id: 'adminSubjects', icon: 'fa-book', text: 'เมนูรายวิชา', action: renderAdminSubjects },
+          { id: 'adminStudents', icon: 'fa-user-graduate', text: 'เมนูทะเบียนนักเรียน', action: renderAdminStudents },
+          { id: 'adminClasses', icon: 'fa-school', text: 'เมนูระดับชั้น', action: renderAdminClasses },
+          { id: 'adminTeachers', icon: 'fa-chalkboard-user', text: 'เมนูทะเบียนคุณครู', action: renderAdminTeachers },
+          { id: 'adminAcademic', icon: 'fa-user-shield', text: 'ทะเบียนฝ่ายวิชาการ', action: renderAdminAcademic },
+          { id: 'adminAssignments', icon: 'fa-tasks', text: 'มอบหมายภาระงาน', action: renderAdminAssignments },
+          { id: 'adminTeacherSettings', icon: 'fa-clock', text: 'ตั้งค่าระบบคุณครู', action: renderAdminTeacherSettings },
+          { id: 'adminStudentSettings', icon: 'fa-calendar-days', text: 'ตั้งค่าระบบนักเรียน', action: renderAdminStudentSettings },
+          { id: 'adminGradeSettings', icon: 'fa-sliders', text: 'ตั้งค่าเกณฑ์เกรด', action: renderAdminGradeSettings }
+        ];
+      } else if (currentUser.role === 'Teacher') {
+        items = [
+          { id: 'teacherScores', icon: 'fa-pen-to-square', text: 'บันทึกคะแนน', action: renderTeacherScores },
+          { id: 'teacherRemedialSetup', icon: 'fa-file-circle-plus', text: 'กำหนดงานแก้ตัว', action: renderTeacherRemedialSetup },
+          { id: 'teacherRemedialRequests', icon: 'fa-envelope-open-text', text: 'คำร้องขอแก้ตัว', action: renderTeacherRemedialRequests }
+        ];
+        if (currentUser.isAcademic) {
+          items.push({ id: 'academicMenu', icon: 'fa-user-shield', text: 'เมนูฝ่ายวิชาการ', action: renderAcademicAffairsView });
+        }
+      } else if (currentUser.role === 'Student') {
+        items = [
+          { id: 'studentGPA', icon: 'fa-chart-line', text: 'ผลการเรียนเฉลี่ย', action: renderStudentGPASummary },
+          { id: 'studentScores', icon: 'fa-table-list', text: 'คะแนนเก็บรายวิชา', action: renderStudentRawScores },
+          { id: 'studentRemedialHistory', icon: 'fa-history', text: 'ประวัติคำร้องขอแก้ตัว', action: renderStudentRemedialHistory }
+        ];
+      }
+
+      items.forEach((item, index) => {
+        const btn = document.createElement('div');
+        btn.className = `list-group-item ${index === 0 ? 'active' : ''}`;
+        btn.innerHTML = `<i class="fa-solid ${item.icon}"></i> ${item.text}`;
+        btn.onclick = () => {
+          document.querySelectorAll('#sidebarMenuList .list-group-item').forEach(e => e.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('currentRoleTitle').innerText = item.text;
+          item.action();
+        };
+        container.appendChild(btn);
+      });
+
+      // Default render first menu
+      if (items.length > 0) {
+        document.getElementById('currentRoleTitle').innerText = items[0].text;
+        items[0].action();
+      }
+    }
+
+    function checkNotifications() {
+      if (!currentUser || !currentUser.username) return;
+      google.script.run.withSuccessHandler(list => {
+        const area = document.getElementById('notificationBellArea');
+        if (list && list.length > 0) {
+          area.innerHTML = `
+            <button class="btn btn-warning btn-sm position-relative" onclick="showNotificationModal(${JSON.stringify(list).replace(/"/g, '&quot;')})">
+              <i class="fa-solid fa-bell"></i> แจ้งเตือน
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">${list.length}</span>
+            </button>`;
+        } else {
+          area.innerHTML = '';
+        }
+      }).getUserNotifications(currentUser.username);
+    }
+
+    function showNotificationModal(list) {
+      let html = '<div class="list-group">';
+      list.forEach(n => {
+        html += `
+          <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center mb-2 shadow-sm border rounded">
+            <div>
+              <div class="fw-bold text-primary">${n.Message}</div>
+              <small class="text-muted">${new Date(n.Timestamp).toLocaleString('th-TH')}</small>
+            </div>
+            <button class="btn btn-arams btn-sm" onclick="handleNotificationClick('${n.NotifID}', '${n.SubjectCode}', '${n.ClassRoom}', '${n.ColumnKey}', '${n.StudentID}')">
+              <i class="fa-solid fa-magnifying-glass"></i> ตรวจสอบ
+            </button>
+          </div>`;
+      });
+      html += '</div>';
+
+      document.getElementById('commonModalTitle').innerText = 'รายการแจ้งเตือน';
+      document.getElementById('commonModalBody').innerHTML = html;
+      bsModal.show();
+    }
+
+    function handleNotificationClick(notifID, subjectCode, classRoom, colKey, studentID) {
+      google.script.run.markNotificationRead(notifID);
+      bsModal.hide();
+      
+      // Navigate to score view and blink target student/cell
+      if (currentUser.role === 'Teacher') {
+        renderTeacherScores(() => {
+          let parts = classRoom.split('/');
+          if (parts.length === 2) {
+            document.getElementById('teacherSubSelect').value = subjectCode;
+            document.getElementById('teacherGradeSelect').value = parts[0];
+            document.getElementById('teacherRoomSelect').value = parts[1];
+            loadTeacherScoreTable(() => {
+              if (studentID && colKey) {
+                let cell = document.getElementById(`score_${studentID}_${colKey}`);
+                if (cell) {
+                  cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  cell.classList.add('blink-cell');
+                  setTimeout(() => cell.classList.remove('blink-cell'), 5000);
+                }
+              }
+            });
+          }
+        });
+      }
+    }
+
+    // ==========================================
+    // 3. ADMIN MODULE VIEWS
+    // ==========================================
+
+    // --- Subject Management ---
+    function renderAdminSubjects() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-book me-2"></i>จัดการรายวิชา</span>
+            <button class="btn btn-arams btn-sm" onclick="openSubjectModal()"><i class="fa-solid fa-plus me-1"></i>เพิ่มรายวิชา</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>รหัสวิชา</th>
+                    <th>ชื่อวิชา</th>
+                    <th>ประเภทวิชา</th>
+                    <th>หน่วยกิต</th>
+                    <th>ระดับชั้น</th>
+                    <th>ห้องเรียน</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="subjectTableBody">
+                  <tr><td colspan="7" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      loadSubjectData();
+    }
+
+    function loadSubjectData() {
+      google.script.run.withSuccessHandler(list => {
+        globalDataCache.subjects = list;
+        const tbody = document.getElementById('subjectTableBody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">ยังไม่มีข้อมูลรายวิชา</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(s => `
+          <tr>
+            <td><span class="badge bg-secondary">${s.SubjectCode}</span></td>
+            <td class="fw-bold">${s.SubjectName}</td>
+            <td>${s.SubjectType}</td>
+            <td>${s.Credits}</td>
+            <td>${s.GradeLevel}</td>
+            <td>${s.Rooms}</td>
+            <td class="text-center">
+              <button class="btn btn-warning btn-sm me-1" onclick="editSubject('${s.SubjectCode}')"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="deleteSubject('${s.SubjectCode}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      }).getSubjects();
+    }
+
+    function openSubjectModal(subjectObj = null) {
+      const isEdit = !!subjectObj;
+      document.getElementById('commonModalTitle').innerText = isEdit ? 'แก้ไขรายวิชา' : 'เพิ่มรายวิชาใหม่';
+      document.getElementById('commonModalBody').innerHTML = `
+        <form id="subjectForm" onsubmit="saveSubjectForm(event)">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">รหัสวิชา</label>
+              <input type="text" id="subCode" class="form-control" value="${isEdit ? subjectObj.SubjectCode : ''}" ${isEdit ? 'readonly' : ''} required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ชื่อวิชา</label>
+              <input type="text" id="subName" class="form-control" value="${isEdit ? subjectObj.SubjectName : ''}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ประเภทรายวิชา</label>
+              <select id="subType" class="form-select" required>
+                <option value="พื้นฐาน" ${isEdit && subjectObj.SubjectType === 'พื้นฐาน' ? 'selected' : ''}>พื้นฐาน</option>
+                <option value="เพิ่มเติม" ${isEdit && subjectObj.SubjectType === 'เพิ่มเติม' ? 'selected' : ''}>เพิ่มเติม</option>
+                <option value="กิจกรรมพัฒนาผู้เรียน" ${isEdit && subjectObj.SubjectType === 'กิจกรรมพัฒนาผู้เรียน' ? 'selected' : ''}>กิจกรรมพัฒนาผู้เรียน</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">หน่วยกิต</label>
+              <input type="number" step="0.5" id="subCredits" class="form-control" value="${isEdit ? subjectObj.Credits : '1.0'}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ระดับชั้นมัธยมศึกษาปีที่</label>
+              <select id="subGrade" class="form-select" required>
+                ${['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'].map(g => `<option value="${g}" ${isEdit && subjectObj.GradeLevel === g ? 'selected' : ''}>${g}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ห้องเรียน (เช่น 1,2,3 หรือ ทุกห้อง)</label>
+              <input type="text" id="subRooms" class="form-control" value="${isEdit ? subjectObj.Rooms : '1'}" placeholder="เช่น 1 หรือ 1,2,3" required>
+            </div>
+          </div>
+          <div class="text-end mt-4">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-arams"><i class="fa-solid fa-save me-1"></i>บันทึกข้อมูล</button>
+          </div>
+        </form>`;
+      bsModal.show();
+    }
+
+    function saveSubjectForm(e) {
+      e.preventDefault();
+      const payload = {
+        SubjectCode: document.getElementById('subCode').value.trim(),
+        SubjectName: document.getElementById('subName').value.trim(),
+        SubjectType: document.getElementById('subType').value,
+        Credits: document.getElementById('subCredits').value,
+        GradeLevel: document.getElementById('subGrade').value,
+        Rooms: document.getElementById('subRooms').value.trim()
+      };
+
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadSubjectData();
+      }).saveSubject(payload);
+    }
+
+    function editSubject(code) {
+      const sub = globalDataCache.subjects.find(s => s.SubjectCode === code);
+      if (sub) openSubjectModal(sub);
+    }
+
+    function deleteSubject(code) {
+      Swal.fire({
+        title: 'ยืนยันการลบรายวิชา?',
+        text: `ต้องการลบรายวิชา ${code} หรือไม่`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบข้อมูล',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          google.script.run.withSuccessHandler(r => {
+            Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false });
+            loadSubjectData();
+          }).deleteSubject(code);
+        }
+      });
+    }
+
+    // --- Student Registration ---
+    let pendingCSVStudents = [];
+
+    function renderAdminStudents() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-user-graduate me-2"></i>ทะเบียนนักเรียน</span>
+            <div>
+              <button class="btn btn-outline-success btn-sm me-2" onclick="downloadCSVTemplate()"><i class="fa-solid fa-file-excel me-1"></i>ดาวน์โหลดเทมเพลต CSV</button>
+              <button class="btn btn-arams btn-sm" onclick="openImportCSVModal()"><i class="fa-solid fa-file-import me-1"></i>นำเข้าข้อมูล CSV</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label font-weight-bold">เลือกระดับชั้น</label>
+                <select id="stdGradeFilter" class="form-select" onchange="loadClassStudents()">
+                  <option value="">-- เลือกชั้น --</option>
+                  ${['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'].map(g => `<option value="${g}">${g}</option>`).join('')}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label font-weight-bold">เลือกห้อง</label>
+                <input type="number" id="stdRoomFilter" class="form-control" value="1" min="1" onchange="loadClassStudents()">
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-arams w-100" onclick="loadClassStudents()"><i class="fa-solid fa-magnifying-glass me-1"></i>ค้นหารายชื่อ</button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>ลำดับ</th>
+                    <th>รหัสประจำตัว</th>
+                    <th>คำนำหน้า</th>
+                    <th>ชื่อ - สกุล</th>
+                    <th>เลขบัตรประชาชน</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="studentTableBody">
+                  <tr><td colspan="6" class="text-center text-muted py-4">กรุณาเลือกชั้นและห้องเพื่อดูรายชื่อ</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function downloadCSVTemplate() {
+      const csvContent = "data:text/csv;charset=utf-8,รหัสประจำตัว,คำนำหน้า,ชื่อ,สกุล,เลขบัตรประจำตัวนักเรียน\n6401,นาย,สมชาย,ใจดี,1100100200301";
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "student_template.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openImportCSVModal() {
+      pendingCSVStudents = [];
+      document.getElementById('commonModalTitle').innerText = 'นำเข้าข้อมูลนักเรียนจากไฟล์ CSV';
+      document.getElementById('commonModalBody').innerHTML = `
+        <div class="mb-3">
+          <label class="form-label font-weight-bold">เลือกไฟล์ CSV</label>
+          <input type="file" id="csvFileInput" class="form-control" accept=".csv" onchange="parseCSVFile(this)">
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">ระดับชั้นที่จะบันทึก</label>
+            <select id="csvSaveGrade" class="form-select">
+              ${['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'].map(g => `<option value="${g}">${g}</option>`).join('')}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">ห้อง</label>
+            <input type="number" id="csvSaveRoom" class="form-control" value="1" min="1">
+          </div>
+        </div>
+        <div class="table-responsive style="max-height: 350px;">
+          <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 50px;">ลำดับ</th>
+                <th>รหัสประจำตัว</th>
+                <th>คำนำหน้า</th>
+                <th>ชื่อ</th>
+                <th>สกุล</th>
+                <th>เลขบัตรประชาชน</th>
+                <th style="width: 90px;" class="text-center">เลื่อน</th>
+              </tr>
+            </thead>
+            <tbody id="csvPreviewTbody">
+              <tr><td colspan="7" class="text-center text-muted py-3">ยังไม่ได้เลือกไฟล์ CSV</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end mt-3">
+          <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-arams" onclick="saveCSVStudentsBatch()"><i class="fa-solid fa-cloud-arrow-up me-1"></i>บันทึกนักเรียนทั้งหมด</button>
+        </div>`;
+      bsModal.show();
+    }
+
+    function parseCSVFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        pendingCSVStudents = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(',');
+          if (row.length >= 5 && row[0].trim() !== '') {
+            pendingCSVStudents.push({
+              StudentID: row[0].trim(),
+              Prefix: row[1].trim(),
+              FirstName: row[2].trim(),
+              LastName: row[3].trim(),
+              NationalID: row[4].trim()
+            });
+          }
+        }
+        renderCSVPreviewTable();
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function renderCSVPreviewTable() {
+      const tbody = document.getElementById('csvPreviewTbody');
+      if (pendingCSVStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">ไม่พบข้อมูลในไฟล์ CSV</td></tr>';
+        return;
+      }
+      tbody.innerHTML = pendingCSVStudents.map((s, idx) => `
+        <tr>
+          <td class="text-center">${idx + 1}</td>
+          <td><input type="text" class="form-control form-control-sm" value="${s.StudentID}" onchange="pendingCSVStudents[${idx}].StudentID=this.value"></td>
+          <td><input type="text" class="form-control form-control-sm" value="${s.Prefix}" onchange="pendingCSVStudents[${idx}].Prefix=this.value"></td>
+          <td><input type="text" class="form-control form-control-sm" value="${s.FirstName}" onchange="pendingCSVStudents[${idx}].FirstName=this.value"></td>
+          <td><input type="text" class="form-control form-control-sm" value="${s.LastName}" onchange="pendingCSVStudents[${idx}].LastName=this.value"></td>
+          <td><input type="text" class="form-control form-control-sm" value="${s.NationalID}" onchange="pendingCSVStudents[${idx}].NationalID=this.value"></td>
+          <td class="text-center">
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1" onclick="moveCSVRow(${idx}, -1)"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1" onclick="moveCSVRow(${idx}, 1)"><i class="fa-solid fa-arrow-down"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function moveCSVRow(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= pendingCSVStudents.length) return;
+      const temp = pendingCSVStudents[index];
+      pendingCSVStudents[index] = pendingCSVStudents[newIndex];
+      pendingCSVStudents[newIndex] = temp;
+      renderCSVPreviewTable();
+    }
+
+    function saveCSVStudentsBatch() {
+      if (pendingCSVStudents.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'ไม่มีข้อมูลนักเรียนที่จะบันทึก' });
+        return;
+      }
+      const grade = document.getElementById('csvSaveGrade').value;
+      const room = document.getElementById('csvSaveRoom').value;
+
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        document.getElementById('stdGradeFilter').value = grade;
+        document.getElementById('stdRoomFilter').value = room;
+        loadClassStudents();
+      }).saveStudentsBatch(pendingCSVStudents, grade, room);
+    }
+
+    function loadClassStudents() {
+      const grade = document.getElementById('stdGradeFilter').value;
+      const room = document.getElementById('stdRoomFilter').value;
+      if (!grade) return;
+
+      const tbody = document.getElementById('studentTableBody');
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังดึงข้อมูล...</td></tr>';
+
+      google.script.run.withSuccessHandler(list => {
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ไม่พบนักเรียนในชั้นเรียนนี้</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map((s, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><span class="badge bg-primary">${s.StudentID}</span></td>
+            <td>${s.Prefix}</td>
+            <td class="fw-bold">${s.FirstName} ${s.LastName}</td>
+            <td>${s.NationalID}</td>
+            <td class="text-center">
+              <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.StudentID}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      }).getStudentsByClass(grade, room);
+    }
+
+    function deleteStudent(studentID) {
+      Swal.fire({
+        title: 'ยืนยันลบนักเรียน?',
+        text: `ต้องการลบรหัสนักเรียน ${studentID} หรือไม่`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          google.script.run.withSuccessHandler(r => {
+            Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false });
+            loadClassStudents();
+          }).deleteStudent(studentID);
+        }
+      });
+    }
+
+    // --- Classroom Management ---
+    function renderAdminClasses() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-school me-2"></i>จัดการระดับชั้นและห้องเรียน</span>
+            <button class="btn btn-arams btn-sm" onclick="openClassModal()"><i class="fa-solid fa-plus me-1"></i>เพิ่มระดับชั้น/ห้อง</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>ระดับชั้น</th>
+                    <th>ห้อง</th>
+                    <th>ครูที่ปรึกษาคนที่ 1</th>
+                    <th>ครูที่ปรึกษาคนที่ 2</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="classTableBody">
+                  <tr><td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(teachers => {
+        globalDataCache.teachers = teachers;
+        loadClassData();
+      }).getTeachers();
+    }
+
+    function loadClassData() {
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('classTableBody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีข้อมูลระดับชั้น</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(c => `
+          <tr>
+            <td class="fw-bold">${c.GradeLevel}</td>
+            <td>ห้อง ${c.Room}</td>
+            <td>${c.Advisor1 || '-'}</td>
+            <td>${c.Advisor2 || '-'}</td>
+            <td class="text-center">
+              <button class="btn btn-danger btn-sm" onclick="deleteClass('${c.GradeLevel}', '${c.Room}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      }).getClasses();
+    }
+
+    function openClassModal() {
+      const teachers = globalDataCache.teachers || [];
+      document.getElementById('commonModalTitle').innerText = 'เพิ่มระดับชั้นและห้องเรียน';
+      document.getElementById('commonModalBody').innerHTML = `
+        <form id="classForm" onsubmit="saveClassForm(event)">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">ระดับชั้นมัธยมศึกษาปีที่</label>
+              <select id="clsGrade" class="form-select" required>
+                ${['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'].map(g => `<option value="${g}">${g}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ห้องที่</label>
+              <input type="number" id="clsRoom" class="form-control" value="1" min="1" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">คุณครูที่ปรึกษา 1</label>
+              <select id="clsAdv1" class="form-select" required>
+                <option value="">-- เลือกครูที่ปรึกษา --</option>
+                ${teachers.map(t => `<option value="${t.Prefix}${t.FullName} (${t.Phone})">${t.Prefix}${t.FullName} (${t.Phone})</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">คุณครูที่ปรึกษา 2 (ถ้ามี)</label>
+              <select id="clsAdv2" class="form-select">
+                <option value="">-- เลือกครูที่ปรึกษา --</option>
+                ${teachers.map(t => `<option value="${t.Prefix}${t.FullName} (${t.Phone})">${t.Prefix}${t.FullName} (${t.Phone})</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="text-end mt-4">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-arams"><i class="fa-solid fa-save me-1"></i>บันทึกข้อมูล</button>
+          </div>
+        </form>`;
+      bsModal.show();
+    }
+
+    function saveClassForm(e) {
+      e.preventDefault();
+      const payload = {
+        GradeLevel: document.getElementById('clsGrade').value,
+        Room: document.getElementById('clsRoom').value,
+        Advisor1: document.getElementById('clsAdv1').value,
+        Advisor2: document.getElementById('clsAdv2').value
+      };
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadClassData();
+      }).saveClass(payload);
+    }
+
+    function deleteClass(gradeLevel, room) {
+      Swal.fire({
+        title: 'ยืนยันลบห้องเรียน?',
+        text: `ต้องการลบ ${gradeLevel} ห้อง ${room} หรือไม่`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          google.script.run.withSuccessHandler(r => {
+            Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false });
+            loadClassData();
+          }).deleteClass(gradeLevel, room);
+        }
+      });
+    }
+
+    // --- Teacher Registration ---
+    function renderAdminTeachers() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-chalkboard-user me-2"></i>ทะเบียนคุณครู</span>
+            <button class="btn btn-arams btn-sm" onclick="openTeacherModal()"><i class="fa-solid fa-plus me-1"></i>เพิ่มคุณครู</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>ชื่อผู้ใช้</th>
+                    <th>คำนำหน้า</th>
+                    <th>ชื่อ - สกุล</th>
+                    <th>เบอร์โทรศัพท์</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="teacherTableBody">
+                  <tr><td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      loadTeacherData();
+    }
+
+    function loadTeacherData() {
+      google.script.run.withSuccessHandler(list => {
+        globalDataCache.teachers = list;
+        const tbody = document.getElementById('teacherTableBody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีข้อมูลคุณครู</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(t => `
+          <tr>
+            <td><span class="badge bg-dark">${t.Username}</span></td>
+            <td>${t.Prefix}</td>
+            <td class="fw-bold">${t.FullName}</td>
+            <td>${t.Phone}</td>
+            <td class="text-center">
+              <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.Username}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      }).getTeachers();
+    }
+
+    function openTeacherModal() {
+      document.getElementById('commonModalTitle').innerText = 'เพิ่มคุณครูใหม่';
+      document.getElementById('commonModalBody').innerHTML = `
+        <form id="teacherForm" onsubmit="saveTeacherForm(event)">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">คำนำหน้า</label>
+              <select id="tPrefix" class="form-select" required>
+                <option value="นาย">นาย</option>
+                <option value="นาง">นาง</option>
+                <option value="นางสาว">นางสาว</option>
+              </select>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">ชื่อ - สกุล</label>
+              <input type="text" id="tFullName" class="form-control" placeholder="เช่น สมศักดิ์ ใจดี" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">เบอร์โทรศัพท์</label>
+              <input type="text" id="tPhone" class="form-control" placeholder="0812345678" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ชื่อผู้ใช้ (Username)</label>
+              <input type="text" id="tUsername" class="form-control" placeholder="ใช้สำหรับเข้าสู่ระบบ" required>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">รหัสผ่าน (Password)</label>
+              <input type="text" id="tPassword" class="form-control" placeholder="กำหนดรหัสผ่าน" required>
+            </div>
+          </div>
+          <div class="text-end mt-4">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-arams"><i class="fa-solid fa-save me-1"></i>บันทึกข้อมูล</button>
+          </div>
+        </form>`;
+      bsModal.show();
+    }
+
+    function saveTeacherForm(e) {
+      e.preventDefault();
+      const payload = {
+        Prefix: document.getElementById('tPrefix').value,
+        FullName: document.getElementById('tFullName').value.trim(),
+        Phone: document.getElementById('tPhone').value.trim(),
+        Username: document.getElementById('tUsername').value.trim(),
+        Password: document.getElementById('tPassword').value.trim()
+      };
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadTeacherData();
+      }).saveTeacher(payload);
+    }
+
+    function deleteTeacher(username) {
+      Swal.fire({
+        title: 'ยืนยันลบคุณครู?',
+        text: `ต้องการลบคุณครู ${username} หรือไม่`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          google.script.run.withSuccessHandler(r => {
+            Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false });
+            loadTeacherData();
+          }).deleteTeacher(username);
+        }
+      });
+    }
+
+    // --- Academic Staff Registration ---
+    function renderAdminAcademic() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-user-shield me-2"></i>ทะเบียนและแต่งตั้งฝ่ายวิชาการ</span>
+            <button class="btn btn-arams btn-sm" onclick="openAcademicModal()"><i class="fa-solid fa-plus me-1"></i>แต่งตั้งฝ่ายวิชาการ</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>ชื่อผู้ใช้</th>
+                    <th>ชื่อ - สกุล</th>
+                    <th>เบอร์โทรศัพท์</th>
+                    <th>ตำแหน่ง</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="academicTableBody">
+                  <tr><td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(teachers => {
+        globalDataCache.teachers = teachers;
+        loadAcademicData();
+      }).getTeachers();
+    }
+
+    function loadAcademicData() {
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('academicTableBody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีฝ่ายวิชาการ</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(a => `
+          <tr>
+            <td><span class="badge bg-secondary">${a.Username}</span></td>
+            <td class="fw-bold">${a.FullName}</td>
+            <td>${a.Phone}</td>
+            <td>${a.IsHead === 'true' ? '<span class="badge bg-danger"><i class="fa-solid fa-crown me-1"></i>หัวหน้าฝ่ายวิชาการ</span>' : '<span class="badge bg-info text-dark">เจ้าหน้าที่วิชาการ</span>'}</td>
+            <td class="text-center">
+              <button class="btn btn-danger btn-sm" onclick="deleteAcademicStaff('${a.Username}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      }).getAcademicStaff();
+    }
+
+    function openAcademicModal() {
+      const teachers = globalDataCache.teachers || [];
+      document.getElementById('commonModalTitle').innerText = 'แต่งตั้งฝ่ายวิชาการ';
+      document.getElementById('commonModalBody').innerHTML = `
+        <form id="academicForm" onsubmit="saveAcademicForm(event)">
+          <div class="mb-3">
+            <label class="form-label">เลือกคุณครู</label>
+            <select id="acTeacherUsername" class="form-select" required>
+              <option value="">-- เลือกคุณครู --</option>
+              ${teachers.map(t => `<option value="${t.Username}">${t.Prefix}${t.FullName} (${t.Username})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="acIsHead">
+            <label class="form-check-label fw-bold" for="acIsHead">แต่งตั้งเป็น "หัวหน้าฝ่ายวิชาการ"</label>
+          </div>
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-arams"><i class="fa-solid fa-save me-1"></i>บันทึกแต่งตั้ง</button>
+          </div>
+        </form>`;
+      bsModal.show();
+    }
+
+    function saveAcademicForm(e) {
+      e.preventDefault();
+      const u = document.getElementById('acTeacherUsername').value;
+      const isHead = document.getElementById('acIsHead').checked;
+
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadAcademicData();
+      }).saveAcademicStaff(u, isHead);
+    }
+
+    function deleteAcademicStaff(username) {
+      Swal.fire({
+        title: 'ยืนยันถอดถอน?',
+        text: `ต้องการถอดถอน ${username} ออกจากฝ่ายวิชาการหรือไม่`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          google.script.run.withSuccessHandler(r => {
+            Swal.fire({ icon: 'success', title: r.message, timer: 1500, showConfirmButton: false });
+            loadAcademicData();
+          }).deleteAcademicStaff(username);
+        }
+      });
+    }
+
+    // --- Work Assignment ---
+    function renderAdminAssignments() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-tasks me-2"></i>มอบหมายภาระงานสอน</span>
+            <button class="btn btn-arams btn-sm" onclick="openAssignmentModal()"><i class="fa-solid fa-plus me-1"></i>มอบหมายภาระงาน</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>คุณครูผู้สอน</th>
+                    <th>รหัสวิชา</th>
+                    <th>ระดับชั้น</th>
+                    <th>ห้อง</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="assignmentTableBody">
+                  <tr><td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(teachers => {
+        globalDataCache.teachers = teachers;
+        google.script.run.withSuccessHandler(subjects => {
+          globalDataCache.subjects = subjects;
+          loadAssignmentData();
+        }).getSubjects();
+      }).getTeachers();
+    }
+
+    function loadAssignmentData() {
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('assignmentTableBody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีการมอบหมายภาระงาน</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(a => `
+          <tr>
+            <td class="fw-bold">${a.TeacherUsername}</td>
+            <td><span class="badge bg-primary">${a.SubjectCode}</span></td>
+            <td>${a.GradeLevel}</td>
+            <td>ห้อง ${a.Room}</td>
+            <td class="text-center">
+              <button class="btn btn-danger btn-sm" onclick="deleteAssignment('${a.TeacherUsername}', '${a.SubjectCode}', '${a.GradeLevel}', '${a.Room}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      }).getAssignments();
+    }
+
+    function openAssignmentModal() {
+      const teachers = globalDataCache.teachers || [];
+      const subjects = globalDataCache.subjects || [];
+
+      document.getElementById('commonModalTitle').innerText = 'มอบหมายภาระงานสอน';
+      document.getElementById('commonModalBody').innerHTML = `
+        <form id="assignForm" onsubmit="saveAssignmentForm(event)">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">เลือกคุณครู</label>
+              <select id="asTeacher" class="form-select" required>
+                <option value="">-- เลือกคุณครู --</option>
+                ${teachers.map(t => `<option value="${t.Username}">${t.Prefix}${t.FullName} (${t.Username})</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">เลือกรายวิชา</label>
+              <select id="asSubject" class="form-select" required>
+                <option value="">-- เลือกรายวิชา --</option>
+                ${subjects.map(s => `<option value="${s.SubjectCode}">${s.SubjectCode} - ${s.SubjectName}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ระดับชั้น</label>
+              <select id="asGrade" class="form-select" required>
+                ${['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'].map(g => `<option value="${g}">${g}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ห้อง</label>
+              <input type="number" id="asRoom" class="form-control" value="1" min="1" required>
+            </div>
+          </div>
+          <div class="text-end mt-4">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-arams"><i class="fa-solid fa-save me-1"></i>บันทึกมอบหมาย</button>
+          </div>
+        </form>`;
+      bsModal.show();
+    }
+
+    function saveAssignmentForm(e) {
+      e.preventDefault();
+      const payload = {
+        TeacherUsername: document.getElementById('asTeacher').value,
+        SubjectCode: document.getElementById('asSubject').value,
+        GradeLevel: document.getElementById('asGrade').value,
+        Room: document.getElementById('asRoom').value
+      };
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadAssignmentData();
+      }).saveAssignment(payload);
+    }
+
+    function deleteAssignment(u, s, g, r) {
+      Swal.fire({
+        title: 'ยืนยันการลบ?',
+        text: `ยกเลิกการมอบหมายงานวิชา ${s} ของ ${u} หรือไม่`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          google.script.run.withSuccessHandler(rRes => {
+            Swal.fire({ icon: 'success', title: rRes.message, timer: 1500, showConfirmButton: false });
+            loadAssignmentData();
+          }).deleteAssignment(u, s, g, r);
+        }
+      });
+    }
+
+    // --- System Settings Modules ---
+    function renderAdminTeacherSettings() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-clock me-2"></i>ตั้งค่าช่วงเวลาบันทึกคะแนนของคุณครู</div>
+          <div class="card-body">
+            <form onsubmit="saveTeacherSettingsForm(event)">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">วัน-เวลา เริ่มเปิดระบบ</label>
+                  <input type="datetime-local" id="tWinStart" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">วัน-เวลา ปิดระบบ</label>
+                  <input type="datetime-local" id="tWinEnd" class="form-control">
+                </div>
+              </div>
+              <div class="form-check form-switch my-4">
+                <input class="form-check-input" type="checkbox" id="tOverride">
+                <label class="form-check-label fw-bold text-danger" for="tOverride">เปิดระบบทันที (ข้ามการตรวจสอบช่วงเวลา)</label>
+              </div>
+              <button type="submit" class="btn btn-arams"><i class="fa-solid fa-save me-1"></i>บันทึกการตั้งค่า</button>
+            </form>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(s => {
+        if (s.TeacherWindowStart) document.getElementById('tWinStart').value = s.TeacherWindowStart;
+        if (s.TeacherWindowEnd) document.getElementById('tWinEnd').value = s.TeacherWindowEnd;
+        document.getElementById('tOverride').checked = String(s.TeacherOverride) === 'true';
+      }).getSettings();
+    }
+
+    function saveTeacherSettingsForm(e) {
+      e.preventDefault();
+      const payload = {
+        TeacherWindowStart: document.getElementById('tWinStart').value,
+        TeacherWindowEnd: document.getElementById('tWinEnd').value,
+        TeacherOverride: document.getElementById('tOverride').checked ? 'true' : 'false'
+      };
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+      }).saveSystemSettings(payload);
+    }
+
+    function renderAdminStudentSettings() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-calendar-days me-2"></i>ตั้งค่าช่วงเวลาเปิดให้ นักเรียน ดูผลการเรียน</div>
+          <div class="card-body">
+            <form onsubmit="saveStudentSettingsForm(event)">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">วัน-เวลา เริ่มเปิดให้ดู</label>
+                  <input type="datetime-local" id="sWinStart" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">วัน-เวลา ปิดระบบ</label>
+                  <input type="datetime-local" id="sWinEnd" class="form-control">
+                </div>
+              </div>
+              <div class="form-check form-switch my-4">
+                <input class="form-check-input" type="checkbox" id="sOverride">
+                <label class="form-check-label fw-bold text-danger" for="sOverride">เปิดให้นักเรียนดูทันที (ข้ามการตรวจสอบช่วงเวลา)</label>
+              </div>
+              <button type="submit" class="btn btn-arams"><i class="fa-solid fa-save me-1"></i>บันทึกการตั้งค่า</button>
+            </form>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(s => {
+        if (s.StudentWindowStart) document.getElementById('sWinStart').value = s.StudentWindowStart;
+        if (s.StudentWindowEnd) document.getElementById('sWinEnd').value = s.StudentWindowEnd;
+        document.getElementById('sOverride').checked = String(s.StudentOverride) === 'true';
+      }).getSettings();
+    }
+
+    function saveStudentSettingsForm(e) {
+      e.preventDefault();
+      const payload = {
+        StudentWindowStart: document.getElementById('sWinStart').value,
+        StudentWindowEnd: document.getElementById('sWinEnd').value,
+        StudentOverride: document.getElementById('sOverride').checked ? 'true' : 'false'
+      };
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+      }).saveSystemSettings(payload);
+    }
+
+    function renderAdminGradeSettings() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-sliders me-2"></i>ตั้งค่าเกณฑ์คะแนนและเกรด</div>
+          <div class="card-body">
+            <p class="text-muted">กำหนดช่วงคะแนนต่ำสุด - สูงสุด และระดับเกรดที่ได้รับ</p>
+            <div id="gradeCriteriaList"></div>
+            <button class="btn btn-arams mt-3" onclick="saveGradeCriteria()"><i class="fa-solid fa-save me-1"></i>บันทึกเกณฑ์เกรด</button>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(s => {
+        const list = JSON.parse(s.GradeCriteria || '[]');
+        const container = document.getElementById('gradeCriteriaList');
+        container.innerHTML = list.map((item, idx) => `
+          <div class="row g-2 align-items-center mb-2">
+            <div class="col-md-4">
+              <input type="number" class="form-control" id="minGrade_${idx}" value="${item.min}" placeholder="คะแนนต่ำสุด">
+            </div>
+            <div class="col-md-4">
+              <input type="number" class="form-control" id="maxGrade_${idx}" value="${item.max}" placeholder="คะแนนสูงสุด">
+            </div>
+            <div class="col-md-4">
+              <input type="text" class="form-control fw-bold text-primary" id="valGrade_${idx}" value="${item.grade}" placeholder="เกรดที่ได้">
+            </div>
+          </div>
+        `).join('');
+      }).getSettings();
+    }
+
+    function saveGradeCriteria() {
+      let criteria = [];
+      for (let i = 0; i < 8; i++) {
+        let minEl = document.getElementById(`minGrade_${i}`);
+        let maxEl = document.getElementById(`maxGrade_${i}`);
+        let valEl = document.getElementById(`valGrade_${i}`);
+        if (minEl && maxEl && valEl) {
+          criteria.push({
+            min: parseFloat(minEl.value),
+            max: parseFloat(maxEl.value),
+            grade: valEl.value.trim()
+          });
+        }
+      }
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+      }).saveSystemSettings({ GradeCriteria: criteria });
+    }
+
+    // ==========================================
+    // 4. TEACHER MODULE VIEWS
+    // ==========================================
+
+    let currentScoreStudents = [];
+    let currentScoreColumns = [];
+
+    function renderTeacherScores(callback) {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-pen-to-square me-2"></i>บันทึกคะแนนและผลการเรียน</div>
+          <div class="card-body">
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label">วิชาที่ได้รับมอบหมาย</label>
+                <select id="teacherSubSelect" class="form-select"></select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">ระดับชั้น</label>
+                <select id="teacherGradeSelect" class="form-select">
+                  ${['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'].map(g => `<option value="${g}">${g}</option>`).join('')}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">ห้อง</label>
+                <input type="number" id="teacherRoomSelect" class="form-control" value="1" min="1">
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-arams w-100" onclick="loadTeacherScoreTable()"><i class="fa-solid fa-magnifying-glass me-1"></i>ค้นหา</button>
+              </div>
+            </div>
+
+            <div id="scoreTableArea" style="display: none;">
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <button class="btn btn-outline-primary btn-sm" onclick="addScoreColumnModal()"><i class="fa-solid fa-plus me-1"></i>เพิ่มหน่วยการเรียนรู้</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="addMidtermColumn()"><i class="fa-solid fa-plus me-1"></i>เพิ่มสอบกลางภาค</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="addFinalColumn()"><i class="fa-solid fa-plus me-1"></i>เพิ่มสอบปลายภาค</button>
+                <button class="btn btn-outline-info btn-sm" id="btnStudentViewToggle" onclick="openStudentScoreVisibilityModal()"><i class="fa-solid fa-eye me-1"></i>เปิดให้นักเรียนดูคะแนนเก็บ</button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-bordered table-score align-middle" id="mainScoreTable">
+                  <thead id="scoreTableHead"></thead>
+                  <tbody id="scoreTableBody"></tbody>
+                </table>
+              </div>
+
+              <div class="alert alert-light border mt-3" style="font-size: 0.88rem;">
+                <strong>คำอธิบายสัญลักษณ์เกรดพิเศษ:</strong><br>
+                <b>0</b> = คะแนนไม่ถึงเกณฑ์ (น้อยกว่า 50 คะแนน) | 
+                <b>ร</b> = รอการประเมินผล | 
+                <b>มส</b> = ไม่มีสิทธิ์เข้ารับการประเมินผลปลายภาค | 
+                <b>มผ</b> = ผลการเรียนไม่ผ่านเกณฑ์
+              </div>
+
+              <div class="d-flex justify-content-end gap-2 mt-3">
+                <button class="btn btn-secondary" onclick="saveScoresDraft()"><i class="fa-solid fa-floppy-disk me-1"></i>บันทึก</button>
+                <button class="btn btn-success" onclick="submitScoresToSGS()"><i class="fa-solid fa-paper-plane me-1"></i>บันทึกคะแนนไปที่ SGS</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      // Load Assigned subjects
+      google.script.run.withSuccessHandler(list => {
+        const select = document.getElementById('teacherSubSelect');
+        select.innerHTML = list.map(s => `<option value="${s.SubjectCode}">${s.SubjectCode} - ${s.SubjectName} (${s.GradeLevel}/${s.Room})</option>`).join('');
+        if (callback) callback();
+      }).getTeacherAssignedSubjects(currentUser.username);
+    }
+
+    function loadTeacherScoreTable(onComplete) {
+      const sub = document.getElementById('teacherSubSelect').value;
+      const grade = document.getElementById('teacherGradeSelect').value;
+      const room = document.getElementById('teacherRoomSelect').value;
+
+      if (!sub) return;
+
+      google.script.run.withSuccessHandler(res => {
+        currentScoreStudents = res.students;
+        const isWindowOpen = res.windowOpen;
+
+        const btnVis = document.getElementById('btnStudentViewToggle');
+        if (!isWindowOpen) {
+          btnVis.disabled = true;
+          btnVis.classList.add('btn-secondary');
+          btnVis.title = 'ไม่อยู่ในช่วงเวลาที่กำหนดในการเปิดให้นักเรียนดู';
+        } else {
+          btnVis.disabled = false;
+          btnVis.classList.remove('btn-secondary');
         }
 
-        // --- LOGIN SYSTEM ---
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const btn = document.getElementById('loginBtn'); 
-            btn.disabled = true; 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
-            
-            fetch(API_URL, { 
-                method: 'POST', 
-                body: JSON.stringify({ action: 'login', username: u, password: p }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                btn.disabled = false; 
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ';
-                if(data.status === 'success') {
-                    localStorage.setItem("arams_user", JSON.stringify(data.user));
-                    currentUser = data.user;
-                    routeUser(currentUser);
-                } else {
-                    Swal.fire('Login Failed', data.message, 'error');
-                }
-            }).catch(err => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ';
-                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+        // Detect dynamic columns from first student
+        if (currentScoreStudents.length > 0 && currentScoreStudents[0].scores) {
+          currentScoreColumns = [];
+          for (let key in currentScoreStudents[0].scores) {
+            currentScoreColumns.push({
+              key: key,
+              name: currentScoreStudents[0].scores[key].name,
+              max: currentScoreStudents[0].scores[key].max,
+              visibleToStudent: currentScoreStudents[0].scores[key].visibleToStudent || false
             });
+          }
+        } else if (currentScoreColumns.length === 0) {
+          currentScoreColumns = [{ key: 'unit1', name: 'หน่วยที่ 1', max: 10, visibleToStudent: false }];
+        }
+
+        renderScoreTableStructure();
+        document.getElementById('scoreTableArea').style.display = 'block';
+        if (onComplete) onComplete();
+      }).getScoreSheetData(sub, grade, room);
+    }
+
+    function renderScoreTableStructure() {
+      const thead = document.getElementById('scoreTableHead');
+      const tbody = document.getElementById('scoreTableBody');
+
+      let headHTML = `<tr>
+        <th style="width: 50px;">ลำดับ</th>
+        <th style="width: 200px;">ชื่อ - สกุล</th>`;
+
+      currentScoreColumns.forEach(col => {
+        headHTML += `<th>${col.name}<br><small class="text-muted">(เต็ม ${col.max})</small></th>`;
+      });
+
+      headHTML += `<th style="width: 80px;">คะแนนรวม</th></tr>`;
+      thead.innerHTML = headHTML;
+
+      let bodyHTML = '';
+      currentScoreStudents.forEach((std, idx) => {
+        let isLocked = std.submittedSGS && !std.reviewedAcademic;
+        let total = 0;
+
+        bodyHTML += `<tr>
+          <td class="text-center">${idx + 1}</td>
+          <td>${std.fullName}</td>`;
+
+        currentScoreColumns.forEach(col => {
+          let scoreObj = std.scores[col.key] || { val: '0', max: col.max };
+          let val = scoreObj.val !== undefined ? scoreObj.val : '';
+          let isLow = false;
+
+          let numVal = parseFloat(val);
+          if (!isNaN(numVal)) {
+            total += numVal;
+            if (numVal < (col.max / 2)) isLow = true;
+          }
+
+          bodyHTML += `<td class="text-center" id="score_${std.studentID}_${col.key}">
+            <input type="text" class="score-input ${isLow ? 'low-score' : ''} ${isLocked ? 'score-input-disabled' : ''}" 
+                   value="${val}" ${isLocked ? 'disabled' : ''}
+                   onchange="updateStudentScore('${std.studentID}', '${col.key}', this.value, ${col.max})">
+          </td>`;
         });
 
-        function routeUser(user) {
-            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-            if(user.role === 'Admin') {
-                document.getElementById('adminPage').classList.add('active');
-                document.getElementById('aUserNameDisplay').innerText = user.name;
-                loadAdminData();
-            } else if(user.role === 'Teacher') {
-                document.getElementById('teacherPage').classList.add('active');
-                document.getElementById('tUserNameDisplay').innerText = user.name;
-                loadTeacherData();
-            } else if(user.role === 'Student') {
-                document.getElementById('studentPage').classList.add('active');
-                document.getElementById('sUserNameDisplay').innerText = user.name;
-                loadStudentDashboard();
-            } else if(user.role === 'Head') {
-                document.getElementById('headPage').classList.add('active');
-                document.getElementById('hUserNameDisplay').innerText = user.name;
-                loadHeadDashboard();
-            }
+        bodyHTML += `<td class="text-center fw-bold text-primary">${total}</td></tr>`;
+      });
+
+      tbody.innerHTML = bodyHTML;
+    }
+
+    function updateStudentScore(studentID, colKey, val, maxVal) {
+      let std = currentScoreStudents.find(s => s.studentID === studentID);
+      if (std) {
+        if (!std.scores[colKey]) std.scores[colKey] = {};
+        std.scores[colKey].val = val;
+        std.scores[colKey].max = maxVal;
+      }
+      renderScoreTableStructure();
+    }
+
+    function addScoreColumnModal() {
+      document.getElementById('commonModalTitle').innerText = 'เพิ่มหน่วยการเรียนรู้';
+      document.getElementById('commonModalBody').innerHTML = `
+        <div class="mb-3">
+          <label class="form-label">ชื่อหน่วยการเรียนรู้</label>
+          <input type="text" id="colUnitName" class="form-control" placeholder="เช่น หน่วยที่ 2 การอ่านจับใจความ" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">คะแนนเต็ม</label>
+          <input type="number" id="colUnitMax" class="form-control" value="10" min="1" required>
+        </div>
+        <div class="text-end">
+          <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-arams" onclick="confirmAddColumn()"><i class="fa-solid fa-plus me-1"></i>เพิ่มช่องคะแนน</button>
+        </div>`;
+      bsModal.show();
+    }
+
+    function confirmAddColumn() {
+      const name = document.getElementById('colUnitName').value.trim();
+      const max = parseFloat(document.getElementById('colUnitMax').value);
+      if (!name) return;
+
+      const key = 'col_' + new Date().getTime();
+      currentScoreColumns.push({ key: key, name: name, max: max, visibleToStudent: false });
+
+      currentScoreStudents.forEach(std => {
+        if (!std.scores) std.scores = {};
+        std.scores[key] = { name: name, max: max, val: '0', visibleToStudent: false };
+      });
+
+      bsModal.hide();
+      renderScoreTableStructure();
+    }
+
+    function addMidtermColumn() {
+      const key = 'midterm';
+      if (currentScoreColumns.some(c => c.key === key)) return;
+      currentScoreColumns.push({ key: key, name: 'สอบกลางภาค', max: 20, visibleToStudent: false });
+      currentScoreStudents.forEach(std => {
+        std.scores[key] = { name: 'สอบกลางภาค', max: 20, val: '0', visibleToStudent: false };
+      });
+      renderScoreTableStructure();
+    }
+
+    function addFinalColumn() {
+      const key = 'final';
+      if (currentScoreColumns.some(c => c.key === key)) return;
+      currentScoreColumns.push({ key: key, name: 'สอบปลายภาค', max: 30, visibleToStudent: false });
+      currentScoreStudents.forEach(std => {
+        std.scores[key] = { name: 'สอบปลายภาค', max: 30, val: '0', visibleToStudent: false };
+      });
+      renderScoreTableStructure();
+    }
+
+    function openStudentScoreVisibilityModal() {
+      document.getElementById('commonModalTitle').innerText = 'ตั้งค่าการมองเห็นคะแนนเก็บของนักเรียน';
+      let html = '<p class="text-muted">เลือกช่องคะแนนที่อนุญาตให้นักเรียนเข้าดูได้ในขณะนี้:</p><div class="list-group mb-3">';
+
+      currentScoreColumns.forEach(col => {
+        html += `
+          <label class="list-group-item d-flex justify-content-between align-items-center">
+            <span>${col.name} (เต็ม ${col.max})</span>
+            <input class="form-check-input col-vis-check" type="checkbox" value="${col.key}" ${col.visibleToStudent ? 'checked' : ''}>
+          </label>`;
+      });
+
+      html += `</div>
+        <div class="text-end">
+          <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-arams" onclick="saveStudentScoreVisibility()"><i class="fa-solid fa-check me-1"></i>บันทึกการตั้งค่า</button>
+        </div>`;
+
+      document.getElementById('commonModalBody').innerHTML = html;
+      bsModal.show();
+    }
+
+    function saveStudentScoreVisibility() {
+      const checkedKeys = Array.from(document.querySelectorAll('.col-vis-check:checked')).map(c => c.value);
+      currentScoreColumns.forEach(col => {
+        col.visibleToStudent = checkedKeys.includes(col.key);
+      });
+
+      currentScoreStudents.forEach(std => {
+        for (let k in std.scores) {
+          std.scores[k].visibleToStudent = checkedKeys.includes(k);
+        }
+      });
+
+      bsModal.hide();
+      Swal.fire({ icon: 'success', title: 'ตั้งค่าการมองเห็นเรียบร้อยแล้ว', timer: 1200, showConfirmButton: false });
+    }
+
+    function saveScoresDraft() {
+      saveScoresToServer(false);
+    }
+
+    function submitScoresToSGS() {
+      Swal.fire({
+        title: 'ยืนยันบันทึกคะแนนไปที่ SGS?',
+        text: 'เมื่อบันทึกส่งไปยังฝ่ายวิชาการแล้ว คุณครูจะไม่สามารถแก้ไขคะแนนในช่องนี้ได้อีก จนกว่าจะได้รับการอนุมัติจากฝ่ายวิชาการ',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันส่ง SGS',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          saveScoresToServer(true);
+        }
+      });
+    }
+
+    function saveScoresToServer(submitSGS) {
+      const sub = document.getElementById('teacherSubSelect').value;
+      const grade = document.getElementById('teacherGradeSelect').value;
+      const room = document.getElementById('teacherRoomSelect').value;
+
+      Swal.fire({ title: 'กำลังบันทึกคะแนน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadTeacherScoreTable();
+      }).saveScores(sub, grade, room, currentScoreStudents, submitSGS);
+    }
+
+    // --- Remedial Task Setup ---
+    function renderTeacherRemedialSetup() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-file-circle-plus me-2"></i>กำหนดงานแก้ตัว</div>
+          <div class="card-body">
+            <form onsubmit="saveRemedialTaskForm(event)">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">เลือกวิชา</label>
+                  <select id="remSubSelect" class="form-select" onchange="loadRemedialColumns()"></select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">ระดับชั้น</label>
+                  <select id="remGradeSelect" class="form-select" onchange="loadRemedialColumns()">
+                    ${['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'].map(g => `<option value="${g}">${g}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">ห้อง</label>
+                  <input type="number" id="remRoomSelect" class="form-control" value="1" min="1" onchange="loadRemedialColumns()">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">เลือกช่องคะแนนที่จะให้แก้ตัว</label>
+                  <select id="remColSelect" class="form-select" required></select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">ลิงก์รูปภาพประกอบ/ใบงาน (ถ้ามี)</label>
+                  <input type="url" id="remImageUrl" class="form-control" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label">รายละเอียดคำสั่งงานแก้ตัว</label>
+                  <textarea id="remDescription" class="form-rows-3 form-control" placeholder="ระบุรายละเอียด เช่น ให้ทำแบบฝึกหัดท้ายบทที่ 1 ข้อ 1-10 ใส่กระดาษรายงาน..." rows="4" required></textarea>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-arams mt-4"><i class="fa-solid fa-save me-1"></i>บันทึกการกำหนดงาน</button>
+            </form>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(list => {
+        const select = document.getElementById('remSubSelect');
+        select.innerHTML = list.map(s => `<option value="${s.SubjectCode}">${s.SubjectCode} - ${s.SubjectName}</option>`).join('');
+        loadRemedialColumns();
+      }).getTeacherAssignedSubjects(currentUser.username);
+    }
+
+    function loadRemedialColumns() {
+      const sub = document.getElementById('remSubSelect').value;
+      const grade = document.getElementById('remGradeSelect').value;
+      const room = document.getElementById('remRoomSelect').value;
+      if (!sub) return;
+
+      google.script.run.withSuccessHandler(res => {
+        const select = document.getElementById('remColSelect');
+        if (res.students.length > 0 && res.students[0].scores) {
+          let cols = [];
+          for (let k in res.students[0].scores) {
+            cols.push({ key: k, name: res.students[0].scores[k].name });
+          }
+          select.innerHTML = cols.map(c => `<option value="${c.key}">${c.name}</option>`).join('');
+        } else {
+          select.innerHTML = '<option value="unit1">หน่วยที่ 1</option>';
+        }
+      }).getScoreSheetData(sub, grade, room);
+    }
+
+    function saveRemedialTaskForm(e) {
+      e.preventDefault();
+      const payload = {
+        SubjectCode: document.getElementById('remSubSelect').value,
+        GradeLevel: document.getElementById('remGradeSelect').value,
+        Room: document.getElementById('remRoomSelect').value,
+        ColumnKey: document.getElementById('remColSelect').value,
+        ImageUrl: document.getElementById('remImageUrl').value.trim(),
+        Description: document.getElementById('remDescription').value.trim()
+      };
+
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+      }).saveRemedialTask(payload);
+    }
+
+    // --- Teacher Remedial Requests ---
+    function renderTeacherRemedialRequests() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-envelope-open-text me-2"></i>คำร้องขอแก้ตัวจากนักเรียน</div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>นักเรียน</th>
+                    <th>ชั้น/ห้อง</th>
+                    <th>วิชา</th>
+                    <th>ช่องคะแนน</th>
+                    <th>คะแนนเดิม</th>
+                    <th>หลักฐาน/งานแก้ตัว</th>
+                    <th>สถานะ</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="teacherReqTableBody">
+                  <tr><td colspan="8" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลดคำร้อง...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('teacherReqTableBody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีคำร้องขอแก้ตัว</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(r => `
+          <tr>
+            <td><b>${r.StudentName}</b><br><small class="text-muted">(${r.StudentID})</small></td>
+            <td>${r.GradeLevel}/${r.Room}</td>
+            <td>${r.SubjectCode}</td>
+            <td>${r.ColumnKey}</td>
+            <td class="text-danger fw-bold">${r.OldScore}</td>
+            <td>
+              ${r.ProofImageUrl ? `<a href="${r.ProofImageUrl}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-image"></i> ดูรูปงาน</a>` : 'ไม่มีรูป'}
+            </td>
+            <td><span class="badge bg-warning text-dark">${r.Status}</span></td>
+            <td class="text-center">
+              ${r.Status === 'PendingTeacher' ? `
+                <button class="btn btn-success btn-sm" onclick="approveRemedialModal('${r.RequestID}', '${r.OldScore}')"><i class="fa-solid fa-check"></i> ตรวจให้ผ่าน</button>
+              ` : '<span class="text-muted">ดำเนินการแล้ว</span>'}
+            </td>
+          </tr>
+        `).join('');
+      }).getTeacherRemedialRequests(currentUser.username);
+    }
+
+    function approveRemedialModal(reqID, oldScore) {
+      document.getElementById('commonModalTitle').innerText = 'อนุมัติคำร้องและประเมินคะแนนใหม่';
+      document.getElementById('commonModalBody').innerHTML = `
+        <div class="mb-3">
+          <label class="form-label font-weight-bold">คะแนนเดิม: <span class="text-danger">${oldScore}</span></label>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">ป้อนคะแนนใหม่หลังแก้ตัว</label>
+          <input type="number" id="approveNewScore" class="form-control" value="10" required>
+        </div>
+        <div class="text-end">
+          <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-success" onclick="confirmTeacherApprove('${reqID}')"><i class="fa-solid fa-paper-plane me-1"></i>ส่งต่อให้ฝ่ายวิชาการ</button>
+        </div>`;
+      bsModal.show();
+    }
+
+    function confirmTeacherApprove(reqID) {
+      const newScore = document.getElementById('approveNewScore').value;
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        renderTeacherRemedialRequests();
+      }).teacherApproveRemedial(reqID, newScore);
+    }
+
+    // ==========================================
+    // 5. ACADEMIC AFFAIRS MODULE VIEWS
+    // ==========================================
+    function renderAcademicAffairsView() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom mb-4">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-user-shield me-2"></i>ตรวจสอบคะแนนรายวิชาจาก SGS</div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>วิชา</th>
+                    <th>ชั้น/ห้อง</th>
+                    <th>สถานะการตรวจสอบ</th>
+                    <th>หมายเหตุ</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="sgsAcademicTbody">
+                  <tr><td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        ${currentUser.isAcademicHead ? `
+        <div class="card card-custom mb-4 border-warning">
+          <div class="card-header card-header-custom bg-warning text-dark"><i class="fa-solid fa-crown me-2"></i>อนุมัติคะแนนแก้ตัวนักเรียน (เฉพาะหัวหน้าฝ่ายวิชาการ)</div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>นักเรียน</th>
+                    <th>วิชา</th>
+                    <th>คะแนนเดิม</th>
+                    <th>คะแนนใหม่ที่ครูเสนอ</th>
+                    <th>หลักฐาน</th>
+                    <th class="text-center">การอนุมัติ</th>
+                  </tr>
+                </thead>
+                <tbody id="academicHeadRemedialTbody">
+                  <tr><td colspan="6" class="text-center py-3">กำลังดึงคำร้อง...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-custom border-danger">
+          <div class="card-header card-header-custom bg-danger text-white"><i class="fa-solid fa-triangle-exclamation me-2"></i>นักเรียนที่มีผลการเรียน 0, ร, มส, มผ หรือต่ำกว่าเกณฑ์</div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>รหัสนักเรียน</th>
+                    <th>ชื่อ - สกุล</th>
+                    <th>ชั้น/ห้อง</th>
+                    <th>รายวิชา</th>
+                    <th>คะแนนรวม</th>
+                    <th>เกรดที่ได้</th>
+                  </tr>
+                </thead>
+                <tbody id="atRiskStudentsTbody">
+                  <tr><td colspan="6" class="text-center py-3">กำลังประมวลผลนักเรียนกลุ่มเสี่ยง...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>` : ''}`;
+
+      loadAcademicSGSData();
+      if (currentUser.isAcademicHead) {
+        loadAcademicHeadRemedials();
+        loadAtRiskStudents();
+      }
+    }
+
+    function loadAcademicSGSData() {
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('sgsAcademicTbody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ไม่มีรายการคะแนนที่ส่งมาจาก SGS</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(item => `
+          <tr>
+            <td><b>${item.SubjectCode}</b> - ${item.SubjectName}</td>
+            <td>${item.GradeLevel}/${item.Room}</td>
+            <td>${item.ReviewedAcademic ? '<span class="badge bg-success">ตรวจสอบแล้ว</span>' : '<span class="badge bg-warning text-dark">รอการตรวจสอบ</span>'}</td>
+            <td>${item.AcademicNotes || '-'}</td>
+            <td class="text-center">
+              <button class="btn btn-arams btn-sm" onclick="reviewSGSModal('${item.SubjectCode}', '${item.GradeLevel}', '${item.Room}')"><i class="fa-solid fa-check-double"></i> ยืนยันตรวจสอบ</button>
+            </td>
+          </tr>
+        `).join('');
+      }).getSGSListForAcademic();
+    }
+
+    function reviewSGSModal(subjectCode, gradeLevel, room) {
+      document.getElementById('commonModalTitle').innerText = 'ยืนยันการตรวจสอบคะแนนวิชา ' + subjectCode;
+      document.getElementById('commonModalBody').innerHTML = `
+        <div class="mb-3">
+          <label class="form-label">หมายเหตุการตรวจสอบจากฝ่ายวิชาการ</label>
+          <textarea id="acReviewNotes" class="form-control" rows="3" placeholder="เช่น ตรวจสอบถูกต้องเรียบร้อยแล้ว"></textarea>
+        </div>
+        <div class="text-end">
+          <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-arams" onclick="confirmAcademicReview('${subjectCode}', '${gradeLevel}', '${room}')"><i class="fa-solid fa-check me-1"></i>บันทึกการตรวจสอบ</button>
+        </div>`;
+      bsModal.show();
+    }
+
+    function confirmAcademicReview(subjectCode, gradeLevel, room) {
+      const notes = document.getElementById('acReviewNotes').value.trim();
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadAcademicSGSData();
+      }).reviewSGSByAcademic(subjectCode, gradeLevel, room, notes);
+    }
+
+    function loadAcademicHeadRemedials() {
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('academicHeadRemedialTbody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">ไม่มีคำร้องแก้ตัวรอการอนุมัติ</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(r => `
+          <tr>
+            <td><b>${r.StudentName}</b> (${r.StudentID})</td>
+            <td>${r.SubjectCode}</td>
+            <td class="text-danger fw-bold">${r.OldScore}</td>
+            <td class="text-success fw-bold">${r.NewScore}</td>
+            <td>${r.ProofImageUrl ? `<a href="${r.ProofImageUrl}" target="_blank" class="btn btn-outline-primary btn-sm">รูปงาน</a>` : '-'}</td>
+            <td class="text-center">
+              <button class="btn btn-success btn-sm me-1" onclick="finalApproveRemedial('${r.RequestID}', true)"><i class="fa-solid fa-check"></i> อนุมัติ</button>
+              <button class="btn btn-danger btn-sm" onclick="finalApproveRemedial('${r.RequestID}', false)"><i class="fa-solid fa-xmark"></i> ไม่อนุมัติ</button>
+            </td>
+          </tr>
+        `).join('');
+      }).getAcademicPendingRemedial();
+    }
+
+    function finalApproveRemedial(reqID, isApproved) {
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+        loadAcademicHeadRemedials();
+      }).academicApproveRemedial(reqID, isApproved, '');
+    }
+
+    function loadAtRiskStudents() {
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('atRiskStudentsTbody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">ไม่พบนักเรียนติด 0, ร, มส, มผ</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(s => `
+          <tr>
+            <td><span class="badge bg-secondary">${s.StudentID}</span></td>
+            <td class="fw-bold">${s.StudentName}</td>
+            <td>${s.GradeLevel}/${s.Room}</td>
+            <td>${s.SubjectCode} - ${s.SubjectName}</td>
+            <td>${s.TotalScore}</td>
+            <td><span class="badge bg-danger fs-6">${s.Grade}</span></td>
+          </tr>
+        `).join('');
+      }).getAcademicAtRiskStudents();
+    }
+
+    // ==========================================
+    // 6. STUDENT MODULE VIEWS
+    // ==========================================
+    function renderStudentGPASummary() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-chart-line me-2"></i>ผลการเรียนเฉลี่ยรายวิชา</div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>รหัสวิชา</th>
+                    <th>ชื่อวิชา</th>
+                    <th>ประเภทวิชา</th>
+                    <th>หน่วยกิต</th>
+                    <th class="text-center">เกรดที่ได้</th>
+                  </tr>
+                </thead>
+                <tbody id="studentGpaTbody">
+                  <tr><td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังดึงผลการเรียน...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(res => {
+        const tbody = document.getElementById('studentGpaTbody');
+        if (!res.summary || res.summary.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ไม่พบรายวิชาในระบบ</td></tr>';
+          return;
+        }
+        tbody.innerHTML = res.summary.map(s => `
+          <tr>
+            <td><span class="badge bg-primary">${s.SubjectCode}</span></td>
+            <td class="fw-bold">${s.SubjectName}</td>
+            <td>${s.SubjectType}</td>
+            <td>${s.Credits}</td>
+            <td class="text-center font-weight-bold fs-5 ${s.Grade === '****' ? 'text-muted' : 'text-success'}">${s.Grade}</td>
+          </tr>
+        `).join('');
+      }).getStudentGPASummary(currentUser.username);
+    }
+
+    function renderStudentRawScores() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-table-list me-2"></i>คะแนนเก็บรายวิชา</div>
+          <div class="card-body">
+            <div class="row g-3 mb-4">
+              <div class="col-md-8">
+                <label class="form-label">เลือกวิชา</label>
+                <select id="stdSubSelect" class="form-select"></select>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-arams w-100" onclick="loadStudentRawScoreTable()"><i class="fa-solid fa-magnifying-glass me-1"></i>ดูคะแนน</button>
+              </div>
+            </div>
+
+            <div id="stdScoreDisplayArea" style="display: none;">
+              <div class="table-responsive mb-3">
+                <table class="table table-bordered align-middle text-center">
+                  <thead class="table-light" id="stdScoreThead"></thead>
+                  <tbody id="stdScoreTbody"></tbody>
+                </table>
+              </div>
+              <div class="text-end">
+                <button class="btn btn-warning" onclick="openStudentRemedialRequestModal()"><i class="fa-solid fa-paper-plane me-1"></i>ส่งคำร้องขอแก้ตัว</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(res => {
+        const select = document.getElementById('stdSubSelect');
+        select.innerHTML = res.summary.map(s => `<option value="${s.SubjectCode}">${s.SubjectCode} - ${s.SubjectName}</option>`).join('');
+      }).getStudentGPASummary(currentUser.username);
+    }
+
+    let currentStudentColumns = [];
+
+    function loadStudentRawScoreTable() {
+      const sub = document.getElementById('stdSubSelect').value;
+      google.script.run.withSuccessHandler(res => {
+        currentStudentColumns = res.columns;
+        const thead = document.getElementById('stdScoreThead');
+        const tbody = document.getElementById('stdScoreTbody');
+
+        if (res.columns.length === 0) {
+          thead.innerHTML = '';
+          tbody.innerHTML = '<tr><td class="text-muted py-4">ยังไม่มีการเปิดเผยคะแนนเก็บในรายวิชานี้</td></tr>';
+          document.getElementById('stdScoreDisplayArea').style.display = 'block';
+          return;
         }
 
-        // --- ADMIN MODULE FUNCTIONS ---
-        function switchAdminTab(tab, element) {
-            document.querySelectorAll('.a-tab').forEach(el => el.style.display = 'none');
-            document.getElementById('a-tab-' + tab).style.display = 'block';
-            document.querySelectorAll('.sidebar-menu li').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+        let headHTML = '<tr>';
+        let bodyHTML = '<tr>';
+
+        res.columns.forEach(col => {
+          headHTML += `<th>${col.colName}<br><small>(เต็ม ${col.maxScore})</small></th>`;
+          bodyHTML += `<td class="fw-bold fs-5">${col.val}</td>`;
+        });
+
+        headHTML += '</tr>';
+        bodyHTML += '</tr>';
+
+        thead.innerHTML = headHTML;
+        tbody.innerHTML = bodyHTML;
+        document.getElementById('stdScoreDisplayArea').style.display = 'block';
+      }).getStudentRawScores(currentUser.username, sub);
+    }
+
+    function openStudentRemedialRequestModal() {
+      const sub = document.getElementById('stdSubSelect').value;
+      document.getElementById('commonModalTitle').innerText = 'ยื่นคำร้องขอแก้ตัว รายวิชา ' + sub;
+      
+      let html = `
+        <div class="mb-3">
+          <label class="form-label">เลือกช่องคะแนนที่ต้องการแก้ตัว</label>
+          <select id="reqColSelect" class="form-select" onchange="showRemedialTaskDetail()">
+            ${currentStudentColumns.map(c => `<option value="${c.columnKey}">${c.colName}</option>`).join('')}
+          </select>
+        </div>
+        <div class="card card-body bg-light mb-3" id="taskDetailCard">
+          <!-- Task description injects here -->
+        </div>
+        <div class="mb-3">
+          <label class="form-label">แนบ URL รูปภาพคำตอบ/หลักฐานงานแก้ตัว</label>
+          <input type="url" id="reqProofUrl" class="form-control" placeholder="https://example.com/my_work.jpg" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">เหตุผลประกอบการขอแก้ตัว</label>
+          <textarea id="reqReason" class="form-control" rows="2" placeholder="เช่น ทำงานแก้ตัวส่งครบถ้วนตามสั่งแล้วครับ" required></textarea>
+        </div>
+        <div class="text-end">
+          <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-arams" onclick="submitRemedialRequestForm()"><i class="fa-solid fa-paper-plane me-1"></i>ส่งคำร้อง</button>
+        </div>`;
+
+      document.getElementById('commonModalBody').innerHTML = html;
+      showRemedialTaskDetail();
+      bsModal.show();
+    }
+
+    function showRemedialTaskDetail() {
+      const colKey = document.getElementById('reqColSelect').value;
+      const col = currentStudentColumns.find(c => c.columnKey === colKey);
+      const card = document.getElementById('taskDetailCard');
+
+      if (col && (col.taskDescription || col.taskImageUrl)) {
+        card.innerHTML = `
+          <h6><i class="fa-solid fa-circle-info text-info me-1"></i>คำสั่งงานแก้ตัวจากคุณครู:</h6>
+          <p class="mb-2">${col.taskDescription || 'ไม่มีรายละเอียดเพิ่มเติม'}</p>
+          ${col.taskImageUrl ? `<a href="${col.taskImageUrl}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-image me-1"></i>ดูรูปภาพคำสั่งงาน</a>` : ''}`;
+      } else {
+        card.innerHTML = '<span class="text-muted">ยังไม่ได้มีการตั้งคำสั่งงานแก้ตัวเฉพาะในช่องนี้</span>';
+      }
+    }
+
+    function submitRemedialRequestForm() {
+      const sub = document.getElementById('stdSubSelect').value;
+      const colKey = document.getElementById('reqColSelect').value;
+      const proofUrl = document.getElementById('reqProofUrl').value.trim();
+      const reason = document.getElementById('reqReason').value.trim();
+      const col = currentStudentColumns.find(c => c.columnKey === colKey);
+
+      const payload = {
+        StudentID: currentUser.username,
+        SubjectCode: sub,
+        ColumnKey: colKey,
+        TeacherUsername: '',
+        ProofImageUrl: proofUrl,
+        Reason: reason,
+        OldScore: col ? col.val : '0'
+      };
+
+      google.script.run.withSuccessHandler(res => {
+        bsModal.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+      }).submitRemedialRequest(payload);
+    }
+
+    function renderStudentRemedialHistory() {
+      const container = document.getElementById('mainContentView');
+      container.innerHTML = `
+        <div class="card card-custom">
+          <div class="card-header card-header-custom"><i class="fa-solid fa-history me-2"></i>ประวัติคำร้องขอแก้ตัว</div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>วิชา</th>
+                    <th>ช่องคะแนน</th>
+                    <th>เหตุผลที่ยื่น</th>
+                    <th>คะแนนเดิม</th>
+                    <th>คะแนนใหม่</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody id="studentReqHistTbody">
+                  <tr><td colspan="6" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังดึงประวัติ...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      google.script.run.withSuccessHandler(list => {
+        const tbody = document.getElementById('studentReqHistTbody');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ไม่มีประวัติยื่นคำร้องแก้ตัว</td></tr>';
+          return;
         }
+        tbody.innerHTML = list.map(r => `
+          <tr>
+            <td><b>${r.SubjectCode}</b> - ${r.SubjectName}</td>
+            <td>${r.ColumnKey}</td>
+            <td>${r.Reason}</td>
+            <td class="text-danger fw-bold">${r.OldScore}</td>
+            <td class="text-success fw-bold">${r.NewScore || '-'}</td>
+            <td>${getRemedialStatusBadge(r.Status)}</td>
+          </tr>
+        `).join('');
+      }).getStudentRemedialHistory(currentUser.username);
+    }
 
-        function loadAdminData() {
-            Swal.showLoading();
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getAdminData' }) })
-            .then(res => res.json())
-            .then(data => {
-                Swal.close();
-                adminData = data;
-                renderAdminTables();
-            });
-        }
-
-        function renderAdminTables() {
-            // Courses Table
-            let cHtml = '';
-            adminData.courses.forEach(c => {
-                cHtml += `<tr><td>${c.Course_Code}</td><td class="text-left">${c.Course_Name}</td><td>${c.Credit}</td><td>ม.${c.Level}</td><td><button class="btn btn-danger btn-sm" onclick="deleteRecord('Courses', 0, '${c.Course_Code}')"><i class="fas fa-trash"></i></button></td></tr>`;
-            });
-            document.getElementById('tblCourses').innerHTML = cHtml;
-
-            // Teachers Table & Select
-            let tHtml = '', tOpt = '<option value="">-- เลือกคุณครู --</option>';
-            adminData.teachers.forEach(t => {
-                tHtml += `<tr><td class="text-left">${t.Prefix}${t.Name}</td><td>${t.Username}</td><td><button class="btn btn-danger btn-sm" onclick="deleteRecord('Users', 0, '${t.ID}')"><i class="fas fa-trash"></i></button></td></tr>`;
-                tOpt += `<option value="${t.Prefix}${t.Name}">${t.Prefix}${t.Name}</option>`;
-            });
-            document.getElementById('tblTeachers').innerHTML = tHtml;
-            document.getElementById('wTeacherSelect').innerHTML = tOpt;
-
-            // Course Select for Workload
-            let cOpt = '<option value="">-- เลือกรายวิชา --</option>';
-            adminData.courses.forEach(c => {
-                cOpt += `<option value="${c.Course_Code}">${c.Course_Code} - ${c.Course_Name}</option>`;
-            });
-            document.getElementById('wCourseSelect').innerHTML = cOpt;
-
-            // Students Table
-            let sHtml = '';
-            adminData.students.forEach(s => {
-                sHtml += `<tr><td>${s.Student_ID}</td><td class="text-left">${s.Prefix}${s.Firstname} ${s.Lastname}</td><td>ม.${s.Level}</td><td>${s.Room}</td><td><button class="btn btn-danger btn-sm" onclick="deleteRecord('Students', 0, '${s.Student_ID}')"><i class="fas fa-trash"></i></button></td></tr>`;
-            });
-            document.getElementById('tblStudents').innerHTML = sHtml;
-
-            // Workloads Table
-            let wHtml = '';
-            if(adminData.workloads) {
-                adminData.workloads.forEach((w, idx) => {
-                    wHtml += `<tr><td class="text-left">${w.Teacher_Name}</td><td>${w.Course_Code}</td><td>ม.${w.Level}</td><td>${w.Room}</td><td><button class="btn btn-danger btn-sm" onclick="deleteRecord('Workloads', 0, '${w.Work_ID}')"><i class="fas fa-trash"></i></button></td></tr>`;
-                });
-            }
-            document.getElementById('tblWorkloads').innerHTML = wHtml;
-        }
-
-        function saveCourse() {
-            const data = ["C" + new Date().getTime(), document.getElementById('cCode').value, document.getElementById('cName').value, document.getElementById('cCredit').value, "พื้นฐาน", document.getElementById('cLevel').value, "ทุกห้อง"];
-            sendAdminAction('saveCourse', data);
-        }
-        function saveTeacher() {
-            const data = ["T" + new Date().getTime(), "", document.getElementById('tName').value, "-", document.getElementById('tUser').value, document.getElementById('tPass').value, "Teacher"];
-            sendAdminAction('saveTeacher', data);
-        }
-        function saveStudent() {
-            const data = [document.getElementById('sId').value, "เด็กชาย/เด็กหญิง", document.getElementById('sFirst').value, document.getElementById('sLast').value, document.getElementById('sNatId').value, document.getElementById('sLevel').value, document.getElementById('sRoom').value, "Normal"];
-            sendAdminAction('saveStudent', data);
-        }
-        function saveWorkload() {
-            const data = ["W" + new Date().getTime(), document.getElementById('wTeacherSelect').value, document.getElementById('wCourseSelect').value, document.getElementById('wLevel').value, document.getElementById('wRoom').value];
-            sendAdminAction('saveWorkload', data);
-        }
-
-        function sendAdminAction(actionName, payloadData) {
-            Swal.showLoading();
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: actionName, data: payloadData }) })
-            .then(res => res.json())
-            .then(resData => { Swal.fire('สำเร็จ', resData.message, 'success'); loadAdminData(); });
-        }
-
-        function deleteRecord(sheetName, idColIdx, idVal) {
-            Swal.fire({ title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true }).then(r => {
-                if(r.isConfirmed) {
-                    Swal.showLoading();
-                    fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', sheetName: sheetName, idColumn: idColIdx, idValue: idVal }) })
-                    .then(res => res.json())
-                    .then(resData => { Swal.fire('สำเร็จ', resData.message, 'success'); loadAdminData(); });
-                }
-            });
-        }
-
-        // --- TEACHER MODULE FUNCTIONS ---
-        function switchTeacherTab(tab, element) {
-            document.querySelectorAll('.t-tab').forEach(el => el.style.display = 'none');
-            document.getElementById('t-tab-' + tab).style.display = 'block';
-            document.querySelectorAll('.sidebar-menu li').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-            if(tab === 'requests') loadTeacherRequests();
-        }
-
-        function loadTeacherData() {
-            Swal.showLoading();
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getTeacherData', teacherName: currentUser.name }) })
-            .then(res => res.json())
-            .then(data => {
-                Swal.close();
-                tData.workloads = data.workloads;
-                let opts = '<option value="">-- เลือกวิชาที่สอน --</option>';
-                tData.workloads.forEach(w => {
-                    opts += `<option value="${w.Course_Code}|${w.Level}">${w.Course_Code} - ระดับชั้น ม.${w.Level} (ห้อง ${w.Room})</option>`;
-                });
-                document.getElementById('selTCourse').innerHTML = opts;
-                document.getElementById('maCourseSelect').innerHTML = opts;
-            });
-        }
-
-        function searchTeacherScores() {
-            const courseVal = document.getElementById('selTCourse').value;
-            const room = document.getElementById('selTRoom').value;
-            if(!courseVal || !room) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกวิชาและห้อง', 'warning');
-            
-            const [courseCode, level] = courseVal.split('|');
-            Swal.showLoading();
-            
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getRoomStudentsForScore', course: courseCode, level: level, room: room }) })
-            .then(res => res.json())
-            .then(data => {
-                Swal.close();
-                tData.students = data.students;
-                tData.scores = data.scores;
-                
-                if(tData.scores.length > 0 && tData.scores[0].Unit_Scores) {
-                    try { tData.units = JSON.parse(tData.scores[0].Unit_Scores); } catch(e) { tData.units = []; }
-                    isSGSSubmitted = (tData.scores[0].SGS_Status === 'SUBMITTED');
-                } else {
-                    tData.units = []; isSGSSubmitted = false;
-                }
-                
-                document.getElementById('scoreGridSection').style.display = 'block';
-                renderScoreGrid();
-            });
-        }
-
-        function renderScoreGrid() {
-            let thHTML = `<tr><th rowspan="2" style="width:50px;">เลขที่</th><th rowspan="2" class="text-left" style="width:250px;">ชื่อ - สกุล</th>`;
-            let subThHTML = `<tr>`;
-            
-            tData.units.forEach((u) => {
-                const visIcon = u.is_visible ? '<i class="fas fa-eye" style="color:#2ecc71;"></i>' : '<i class="fas fa-eye-slash" style="color:#e74c3c;"></i>';
-                thHTML += `<th>${u.name} ${visIcon}</th>`;
-                subThHTML += `<th style="font-size:12px; font-weight:normal; background:#e9ecef;">เต็ม ${u.full}</th>`;
-            });
-            
-            thHTML += `<th rowspan="2" style="background:#f1c40f;">กลางภาค<br>(20)</th><th rowspan="2" style="background:#e74c3c; color:white;">ปลายภาค<br>(30)</th><th rowspan="2">รวม<br>(100)</th><th rowspan="2">เกรด</th></tr>`;
-            subThHTML += `</tr>`;
-            document.getElementById('scoreTableHead').innerHTML = thHTML + subThHTML;
-
-            let tbHTML = '';
-            tData.students.forEach((std, sIndex) => {
-                const scoreRec = tData.scores.find(x => x.Student_ID === std.Student_ID) || {};
-                let parsedUnits = [];
-                if(scoreRec.Unit_Scores) { try { parsedUnits = JSON.parse(scoreRec.Unit_Scores); } catch(e){} }
-                
-                tbHTML += `<tr><td>${sIndex + 1}</td><td class="text-left">${std.Prefix}${std.Firstname} ${std.Lastname}</td>`;
-                let totalScore = 0;
-                
-                tData.units.forEach((u) => {
-                    const sUnit = parsedUnits.find(pu => pu.name === u.name);
-                    const val = sUnit ? parseFloat(sUnit.score || 0) : 0;
-                    totalScore += val;
-                    const isFail = (val < (u.full / 2)) ? 'fail' : '';
-                    const disabled = isSGSSubmitted ? 'disabled' : '';
-                    
-                    tbHTML += `<td><input type="number" class="input-score unit-score ${isFail}" data-std="${std.Student_ID}" data-uname="${u.name}" data-full="${u.full}" value="${val}" onchange="recalculateRow(this)" ${disabled}></td>`;
-                });
-                
-                const mid = parseFloat(scoreRec.Midterm || 0); totalScore += mid;
-                const fin = parseFloat(scoreRec.Final || 0); totalScore += fin;
-                const grade = calculateGrade(totalScore);
-                const disabled = isSGSSubmitted ? 'disabled' : '';
-
-                tbHTML += `<td><input type="number" class="input-score midterm" data-std="${std.Student_ID}" value="${mid}" onchange="recalculateRow(this)" ${disabled}></td>
-                           <td><input type="number" class="input-score final" data-std="${std.Student_ID}" value="${fin}" onchange="recalculateRow(this)" ${disabled}></td>
-                           <td class="row-total" style="font-weight:bold;">${totalScore}</td>
-                           <td class="row-grade" style="font-weight:bold; color:var(--primary);">${grade}</td></tr>`;
-            });
-            document.getElementById('scoreTableBody').innerHTML = tbHTML;
-        }
-
-        function addScoreColumn() {
-            if(isSGSSubmitted) return Swal.fire('ถูกล็อก', 'ส่งข้อมูล SGS แล้ว ไม่สามารถเพิ่มช่องคะแนนได้', 'error');
-            Swal.fire({
-                title: 'เพิ่มช่องคะแนนเก็บใหม่',
-                html: `<input id="swUName" class="swal2-input" placeholder="ชื่อหน่วย / เรื่อง">
-                       <input id="swUFull" type="number" class="swal2-input" placeholder="คะแนนเต็ม">`,
-                preConfirm: () => { return { name: document.getElementById('swUName').value, full: parseFloat(document.getElementById('swUFull').value) } }
-            }).then(res => {
-                if(res.isConfirmed && res.value.name) {
-                    tData.units.push({ name: res.value.name, full: res.value.full, is_visible: false });
-                    renderScoreGrid();
-                }
-            });
-        }
-
-        function recalculateRow(inputElement) {
-            const tr = inputElement.closest('tr');
-            if(inputElement.classList.contains('unit-score')) {
-                const full = parseFloat(inputElement.getAttribute('data-full'));
-                const val = parseFloat(inputElement.value || 0);
-                if(val < (full / 2)) inputElement.classList.add('fail');
-                else inputElement.classList.remove('fail');
-            }
-            let total = 0;
-            tr.querySelectorAll('.unit-score, .midterm, .final').forEach(inp => { total += parseFloat(inp.value || 0); });
-            tr.querySelector('.row-total').innerText = total;
-            tr.querySelector('.row-grade').innerText = calculateGrade(total);
-        }
-
-        function calculateGrade(t) {
-            if(t >= 80) return "4"; if(t >= 75) return "3.5"; if(t >= 70) return "3";
-            if(t >= 65) return "2.5"; if(t >= 60) return "2"; if(t >= 55) return "1.5";
-            if(t >= 50) return "1"; return "0";
-        }
-
-        function toggleScoreVisibility() {
-            if(tData.units.length === 0) return Swal.fire('แจ้งเตือน', 'ยังไม่มีช่องคะแนน', 'warning');
-            let html = '<div style="text-align:left;">';
-            tData.units.forEach((u, idx) => {
-                const chk = u.is_visible ? 'checked' : '';
-                html += `<div style="margin-bottom:10px;"><input type="checkbox" id="vis_${idx}" ${chk}> <label for="vis_${idx}">${u.name} (เต็ม ${u.full})</label></div>`;
-            });
-            html += '</div>';
-            Swal.fire({
-                title: 'เลือกช่องที่เปิดให้นักเรียนดูได้', html: html, confirmButtonText: 'บันทึก',
-                preConfirm: () => {
-                    tData.units.forEach((u, idx) => { u.is_visible = document.getElementById(`vis_${idx}`).checked; });
-                }
-            }).then((res) => { if(res.isConfirmed) renderScoreGrid(); });
-        }
-
-        function saveScoresDB() {
-            if(isSGSSubmitted) return Swal.fire('ถูกล็อก', 'ส่งข้อมูลไป SGS แล้ว แก้ไขไม่ได้', 'error');
-            const [courseCode, level] = document.getElementById('selTCourse').value.split('|');
-            const room = document.getElementById('selTRoom').value;
-            let payload = [];
-            
-            document.getElementById('scoreTableBody').querySelectorAll('tr').forEach(tr => {
-                const stdId = tr.querySelector('.unit-score, .midterm').getAttribute('data-std');
-                let unitScores = [];
-                tr.querySelectorAll('.unit-score').forEach(inp => {
-                    unitScores.push({ name: inp.getAttribute('data-uname'), score: inp.value, full: inp.getAttribute('data-full'), is_visible: tData.units.find(x => x.name === inp.getAttribute('data-uname')).is_visible });
-                });
-                payload.push({ Course_Code: courseCode, Level: level, Room: room, Student_ID: stdId, Unit_Scores: unitScores, Midterm: tr.querySelector('.midterm').value, Final: tr.querySelector('.final').value, Total: tr.querySelector('.row-total').innerText, Grade: tr.querySelector('.row-grade').innerText, SGS_Status: 'DRAFT' });
-            });
-
-            Swal.showLoading();
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveScores', payload: JSON.stringify(payload) }) })
-            .then(res => res.json()).then(data => { Swal.fire('สำเร็จ', data.message, 'success'); });
-        }
-
-        function submitToSGS() {
-            Swal.fire({ title: 'ยืนยันส่งคะแนนไปยัง SGS?', text: "ข้อมูลจะถูกล็อกถาวร!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c' }).then((result) => {
-                if(result.isConfirmed) {
-                    saveScoresDB();
-                    const [courseCode, level] = document.getElementById('selTCourse').value.split('|');
-                    const room = document.getElementById('selTRoom').value;
-                    fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitToSGS', course: courseCode, level: level, room: room }) })
-                    .then(res => res.json()).then(data => { Swal.fire('ล็อกข้อมูลสำเร็จ', data.message, 'success'); isSGSSubmitted = true; renderScoreGrid(); });
-                }
-            });
-        }
-
-        function assignMakeupWork() {
-            const courseVal = document.getElementById('maCourseSelect').value;
-            const unitName = document.getElementById('maUnitName').value;
-            const details = document.getElementById('maDetails').value;
-            const imgFile = document.getElementById('maImageFile').files[0];
-            if(!courseVal || !unitName) return Swal.fire('แจ้งเตือน', 'กรุณาระบุข้อมูลให้ครบ', 'warning');
-            const [course, level] = courseVal.split('|');
-            
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                const payload = { Course_Code: course, Level: level, Unit_Name: unitName, Details: details, Image_Base64: e.target.result, Teacher_Name: currentUser.name };
-                fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveMakeupAssignment', payload: JSON.stringify(payload) }) })
-                .then(res => res.json()).then(data => { Swal.fire('สำเร็จ', data.message, 'success'); });
-            };
-            if(imgFile) reader.readAsDataURL(imgFile); else reader.onload({target:{result:''}});
-        }
-
-        function loadTeacherRequests() {
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getMakeupRequestsTeacher', teacherName: currentUser.name }) })
-            .then(res => res.json()).then(data => {
-                let html = '';
-                data.requests.forEach(r => {
-                    let btn = r.Status === 'WAITING_TEACHER' ? `<button class="btn btn-primary btn-sm" onclick="approveToAcademic('${r.Req_ID}')">ส่งให้ฝ่ายวิชาการ</button>` : `<span>${r.Status}</span>`;
-                    html += `<tr><td>${r.Req_ID}</td><td>${r.Course_Code}</td><td>${r.Student_ID}</td><td>${r.Unit_Name}</td><td>${r.Old_Score}</td><td>${r.Status}</td><td>${btn}</td></tr>`;
-                });
-                document.getElementById('tblTeacherRequests').innerHTML = html;
-            });
-        }
-
-        function approveToAcademic(reqId) {
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'approveRequestTeacher', reqId: reqId }) })
-            .then(res => res.json()).then(data => { Swal.fire('สำเร็จ', data.message, 'success'); loadTeacherRequests(); });
-        }
-
-        // --- STUDENT MODULE FUNCTIONS ---
-        function loadStudentDashboard() {
-            Swal.showLoading();
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentDashboard', studentId: currentUser.id }) })
-            .then(res => res.json()).then(data => {
-                Swal.close();
-                stdAssignments = data.assignments;
-                let html = '';
-                data.scores.forEach(s => {
-                    const cInfo = data.courses.find(c => c.Course_Code === s.Course_Code) || {};
-                    let unitsHtml = '';
-                    if(s.Unit_Scores) {
-                        JSON.parse(s.Unit_Scores).forEach(u => {
-                            if(u.is_fail) {
-                                unitsHtml += `<span style="display:inline-block; margin:2px; padding:4px 8px; background:#ffcccc; color:#d32f2f; border-radius:4px; font-weight:bold;">${u.name}: ${u.score}/${u.full} <button onclick="openMakeupForm('${s.Course_Code}', '${s.Level}', '${u.name}', '${u.score}')" class="btn btn-danger btn-sm" style="padding:1px 4px; font-size:11px;">แก้งาน</button></span>`;
-                            } else {
-                                unitsHtml += `<span style="display:inline-block; margin:2px; padding:4px 8px; background:#e8f8f5; border-radius:4px;">${u.name}: ${u.score}/${u.full}</span>`;
-                            }
-                        });
-                    }
-                    html += `<tr><td>${s.Course_Code}</td><td class="text-left">${cInfo.Course_Name || '-'}</td><td class="text-left">${unitsHtml || 'ยังไม่มีการประกาศคะแนน'}</td><td style="font-weight:bold;">${s.Total || 0}</td><td style="font-weight:bold;">${s.Grade || '0'}</td></tr>`;
-                });
-                document.getElementById('tblStudentScoresBody').innerHTML = html;
-            });
-        }
-
-        function openMakeupForm(courseCode, level, unitName, oldScore) {
-            const assign = stdAssignments.find(a => a.Course_Code === courseCode && a.Level === level && a.Unit_Name === unitName);
-            if(!assign) return Swal.fire('แจ้งเตือน', 'คุณครูยังไม่ได้กำหนดงานแก้ตัว', 'info');
-            
-            Swal.fire({
-                title: `แก้ตัว: ${unitName}`,
-                html: `<div style="text-align:left; background:#f9f9f9; padding:10px; border-radius:5px; margin-bottom:10px;"><b>คำสั่ง:</b> ${assign.Details}</div><textarea id="swRemarks" class="swal2-textarea" placeholder="พิมพ์ข้อความส่งงาน..."></textarea>`,
-                confirmButtonText: 'ส่งคำร้อง', showCancelButton: true,
-                preConfirm: () => { return { Remarks: document.getElementById('swRemarks').value, Assign_ID: assign.Assign_ID } }
-            }).then((res) => {
-                if(res.isConfirmed) {
-                    fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitMakeupRequest', payload: JSON.stringify({ Course_Code: courseCode, Level: level, Student_ID: currentUser.id, Unit_Name: unitName, Assign_ID: res.value.Assign_ID, Old_Score: oldScore, Remarks: res.value.Remarks }) }) })
-                    .then(r => r.json()).then(d => { Swal.fire('สำเร็จ', d.message, 'success'); });
-                }
-            });
-        }
-
-        // --- HEAD ACADEMIC MODULE FUNCTIONS ---
-        function loadHeadDashboard() {
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHeadRequests' }) })
-            .then(res => res.json()).then(data => {
-                let html = '';
-                data.requests.forEach(r => {
-                    html += `<tr><td>${r.Req_ID}</td><td>${r.Course_Code}</td><td>${r.Student_ID}</td><td>${r.Unit_Name}</td><td><span style="color:red; font-weight:bold;">${r.Old_Score}</span></td><td><input type="number" id="newScore_${r.Req_ID}" class="input-score" placeholder="คะแนนใหม่" style="width:70px; margin-right:5px;"><button class="btn btn-success btn-sm" onclick="approveHeadRequest('${r.Req_ID}')">อนุมัติเข้า SGS</button></td></tr>`;
-                });
-                document.getElementById('tblHeadRequestsBody').innerHTML = html;
-            });
-        }
-
-        function approveHeadRequest(reqId) {
-            const newS = document.getElementById('newScore_' + reqId).value;
-            if(!newS) return Swal.fire('แจ้งเตือน', 'กรุณากรอกคะแนนใหม่', 'warning');
-            Swal.fire({ title: 'ยืนยันอนุมัติ?', icon: 'warning', showCancelButton: true }).then((result) => {
-                if(result.isConfirmed) {
-                    fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'approveRequestHead', reqId: reqId, newScore: newS }) })
-                    .then(res => res.json()).then(data => { Swal.fire('สำเร็จ', data.message, 'success'); loadHeadDashboard(); });
-                }
-            });
-        }
-    </script>
+    function getRemedialStatusBadge(status) {
+      if (status === 'PendingTeacher') return '<span class="badge bg-warning text-dark">รอครูประจำวิชาตรวจสอบ</span>';
+      if (status === 'PendingAcademic') return '<span class="badge bg-info text-dark">รอหัวหน้าฝ่ายวิชาการอนุมัติ</span>';
+      if (status === 'Approved') return '<span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>อนุมัติคะแนนใหม่แล้ว</span>';
+      if (status === 'Rejected') return '<span class="badge bg-danger">ไม่อนุมัติ</span>';
+      return `<span class="badge bg-secondary">${status}</span>`;
+    }
+  </script>
 </body>
 </html>
