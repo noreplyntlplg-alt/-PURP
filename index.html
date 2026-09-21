@@ -128,6 +128,7 @@
             position: fixed;
             height: 100%;
             padding-top: 20px;
+            overflow-y: auto;
         }
 
         .sidebar-header {
@@ -165,6 +166,7 @@
             margin-left: 250px;
             padding: 20px;
             width: calc(100% - 250px);
+            min-height: 100vh;
         }
 
         .topbar {
@@ -201,10 +203,45 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-height: 80vh;
         }
 
-        .page-title { margin-bottom: 20px; color: var(--primary-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; display:inline-block;}
+        .page-title { 
+            margin-bottom: 20px; 
+            color: var(--primary-color); 
+            border-bottom: 2px solid var(--accent-color); 
+            padding-bottom: 10px; 
+            display:inline-block;
+        }
 
+        /* --- ตารางและฟอร์ม --- */
+        .data-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+            font-size: 18px; 
+        }
+        .data-table th, .data-table td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        .data-table th { 
+            background-color: var(--primary-color); 
+            color: white; 
+        }
+        .data-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .data-table tr:hover { background-color: #f1f1f1; }
+        
+        .btn-action { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-right: 5px; color: white;}
+        .btn-edit { background-color: #f39c12; }
+        .btn-delete { background-color: #e74c3c; }
+        .btn-add { background-color: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; margin-bottom: 15px;}
+        .btn-import { background-color: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; margin-bottom: 15px;}
+        
+        .form-input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 18px; }
+        
+        #csvFileInput { display: none; }
     </style>
 </head>
 <body>
@@ -213,7 +250,7 @@
     <div id="login-container">
         <div class="login-box">
             <h2>ARAMS</h2>
-            <p style="margin-bottom: 20px; color: #7f8c8d;">เข้าสู่ระบบ</p>
+            <p style="margin-bottom: 20px; color: #7f8c8d;">เข้าสู่ระบบจัดการทะเบียนและวัดผล</p>
             <div class="input-group">
                 <input type="text" id="username" placeholder="ชื่อผู้ใช้">
             </div>
@@ -283,6 +320,8 @@
                 { id: 'academic-check', icon: 'fa-search-plus', title: 'ตรวจสอบคะแนนและอนุมัติ' }
             ]
         };
+
+        let tempCSVData = []; // ตัวแปรเก็บข้อมูลชั่วคราวสำหรับอัปโหลด CSV
 
         // เริ่มต้นตรวจสอบว่าเคย Login ไว้หรือไม่ (Remember Me)
         window.onload = function() {
@@ -390,12 +429,16 @@
             document.getElementById('password').value = '';
         }
 
-        // ระบบสลับหน้า (SPA - ไม่รีเฟรช)
+        // ระบบสลับหน้า (SPA - ไม่รีเฟรช) และโหลดข้อมูลเมนูนั้นๆ
         function loadPage(pageId, title) {
             document.getElementById('topbar-title').innerText = title;
             const pages = document.querySelectorAll('.page-content');
             pages.forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
+
+            // เมื่อกดเปิดเมนู ให้เรนเดอร์เนื้อหาตามเมนูที่กด
+            if (pageId === 'admin-course') renderSubjectPage();
+            if (pageId === 'admin-student') renderStudentPage();
         }
 
         // ระบบออกจากระบบ (ทำทันที ไม่รีเฟรช)
@@ -414,6 +457,371 @@
                     localStorage.removeItem('arams_session');
                     document.getElementById('app-container').style.display = 'none';
                     document.getElementById('login-container').style.display = 'flex';
+                }
+            });
+        }
+
+        // ==============================================================
+        // 1. ระบบจัดการรายวิชา (Subjects)
+        // ==============================================================
+        async function renderSubjectPage() {
+            const container = document.getElementById('admin-course');
+            container.innerHTML = `
+                <h2 class="page-title"><i class="fas fa-book"></i> จัดการรายวิชา</h2>
+                <br>
+                <button class="btn-add" onclick="openSubjectModal()"><i class="fas fa-plus"></i> เพิ่มรายวิชา</button>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>รหัสวิชา</th>
+                            <th>ชื่อวิชา</th>
+                            <th>หน่วยกิต</th>
+                            <th>ประเภท</th>
+                            <th>ระดับชั้น</th>
+                            <th>ห้อง</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subject-table-body">
+                        <tr><td colspan="7" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            `;
+            fetchSubjects();
+        }
+
+        async function fetchSubjects() {
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST', body: JSON.stringify({ action: 'get_subjects' })
+                });
+                const result = await response.json();
+                const tbody = document.getElementById('subject-table-body');
+                tbody.innerHTML = '';
+
+                if (result.status === 'success' && result.data.length > 0) {
+                    result.data.forEach(sub => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${sub.Code}</td>
+                                <td>${sub.Name}</td>
+                                <td>${sub.Credit}</td>
+                                <td>${sub.Type}</td>
+                                <td>${sub.Level}</td>
+                                <td>${sub.Room}</td>
+                                <td>
+                                    <button class="btn-action btn-edit" onclick='openSubjectModal(${JSON.stringify(sub)})'><i class="fas fa-edit"></i></button>
+                                    <button class="btn-action btn-delete" onclick="deleteSubject('${sub.SubjectID}')"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ยังไม่มีข้อมูลรายวิชา</td></tr>';
+                }
+            } catch (error) {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลรายวิชาได้', 'error');
+            }
+        }
+
+        function openSubjectModal(data = null) {
+            const isEdit = data !== null;
+            Swal.fire({
+                title: isEdit ? 'แก้ไขรายวิชา' : 'เพิ่มรายวิชา',
+                html: `
+                    <input type="hidden" id="sub_id" value="${isEdit ? data.SubjectID : 'SUB_' + new Date().getTime()}">
+                    <input type="text" id="sub_code" class="form-input" placeholder="รหัสวิชา (เช่น ท22102)" value="${isEdit ? data.Code : ''}">
+                    <input type="text" id="sub_name" class="form-input" placeholder="ชื่อวิชา (เช่น ภาษาไทย)" value="${isEdit ? data.Name : ''}">
+                    <input type="number" step="0.5" id="sub_credit" class="form-input" placeholder="หน่วยกิต (เช่น 1.5)" value="${isEdit ? data.Credit : ''}">
+                    <select id="sub_type" class="form-input">
+                        <option value="พื้นฐาน" ${isEdit && data.Type == 'พื้นฐาน' ? 'selected' : ''}>พื้นฐาน</option>
+                        <option value="เพิ่มเติม" ${isEdit && data.Type == 'เพิ่มเติม' ? 'selected' : ''}>เพิ่มเติม</option>
+                        <option value="กิจกรรมพัฒนาผู้เรียน" ${isEdit && data.Type == 'กิจกรรมพัฒนาผู้เรียน' ? 'selected' : ''}>กิจกรรมพัฒนาผู้เรียน</option>
+                    </select>
+                    <select id="sub_level" class="form-input">
+                        <option value="ม.1" ${isEdit && data.Level == 'ม.1' ? 'selected' : ''}>มัธยมศึกษาปีที่ 1</option>
+                        <option value="ม.2" ${isEdit && data.Level == 'ม.2' ? 'selected' : ''}>มัธยมศึกษาปีที่ 2</option>
+                        <option value="ม.3" ${isEdit && data.Level == 'ม.3' ? 'selected' : ''}>มัธยมศึกษาปีที่ 3</option>
+                        <option value="ม.4" ${isEdit && data.Level == 'ม.4' ? 'selected' : ''}>มัธยมศึกษาปีที่ 4</option>
+                        <option value="ม.5" ${isEdit && data.Level == 'ม.5' ? 'selected' : ''}>มัธยมศึกษาปีที่ 5</option>
+                        <option value="ม.6" ${isEdit && data.Level == 'ม.6' ? 'selected' : ''}>มัธยมศึกษาปีที่ 6</option>
+                    </select>
+                    <input type="text" id="sub_room" class="form-input" placeholder="ห้อง (เช่น 1 หรือ 1,2,3)" value="${isEdit ? data.Room : ''}">
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึก',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => {
+                    return {
+                        SubjectID: document.getElementById('sub_id').value,
+                        Code: document.getElementById('sub_code').value,
+                        Name: document.getElementById('sub_name').value,
+                        Credit: document.getElementById('sub_credit').value,
+                        Type: document.getElementById('sub_type').value,
+                        Level: document.getElementById('sub_level').value,
+                        Room: document.getElementById('sub_room').value
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    const payload = {
+                        action: isEdit ? 'edit_subject' : 'add_subject',
+                        data: result.value
+                    };
+                    const resp = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    const resData = await resp.json();
+                    if(resData.status === 'success') {
+                        Swal.fire('สำเร็จ', resData.message, 'success');
+                        fetchSubjects();
+                    }
+                }
+            });
+        }
+
+        function deleteSubject(id) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: "คุณจะไม่สามารถกู้คืนข้อมูลนี้ได้!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                confirmButtonText: 'ลบข้อมูล'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    const resp = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_subject', data: { SubjectID: id } }) });
+                    const resData = await resp.json();
+                    if(resData.status === 'success') {
+                        Swal.fire('ลบแล้ว!', 'ข้อมูลถูกลบเรียบร้อย', 'success');
+                        fetchSubjects();
+                    }
+                }
+            });
+        }
+
+        // ==============================================================
+        // 2. ระบบทะเบียนนักเรียน (Students) & อัปโหลด CSV
+        // ==============================================================
+        async function renderStudentPage() {
+            const container = document.getElementById('admin-student');
+            container.innerHTML = `
+                <h2 class="page-title"><i class="fas fa-user-graduate"></i> ทะเบียนนักเรียน</h2>
+                <br>
+                <button class="btn-import" onclick="document.getElementById('csvFileInput').click()"><i class="fas fa-file-csv"></i> นำเข้าจาก CSV</button>
+                <button class="btn-action" style="background-color:#7f8c8d; margin-bottom: 15px;" onclick="downloadCSVTemplate()"><i class="fas fa-download"></i> โหลดเทมเพลต CSV</button>
+                <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVUpload(event)">
+                
+                <!-- ส่วนพรีวิวข้อมูล CSV ก่อนบันทึก -->
+                <div id="csv-preview-container" style="display:none; background:#fef9e7; padding:15px; border-radius:5px; margin-bottom:20px; border: 1px solid #f1c40f;">
+                    <h3 style="color:#f39c12; margin-bottom:10px;"><i class="fas fa-exclamation-triangle"></i> ตรวจสอบข้อมูลก่อนบันทึก</h3>
+                    <p>กรุณาเลือกชั้นและตรวจสอบลำดับนักเรียน คุณสามารถกดปุ่มเลื่อนขึ้น/ลงได้</p>
+                    <select id="csv_class_select" class="form-input" style="width: 200px; display:inline-block;">
+                        <option value="ม.1/1">ม.1/1</option>
+                        <option value="ม.2/1">ม.2/1</option>
+                        <option value="ม.3/1">ม.3/1</option>
+                        <option value="ม.4/1">ม.4/1</option>
+                        <option value="ม.5/1">ม.5/1</option>
+                        <option value="ม.6/1">ม.6/1</option>
+                    </select>
+                    <button class="btn-add" onclick="saveBulkCSV()"><i class="fas fa-save"></i> บันทึกข้อมูลทั้งหมด</button>
+                    <button class="btn-action btn-delete" onclick="cancelCSV()"><i class="fas fa-times"></i> ยกเลิก</button>
+                    
+                    <table class="data-table">
+                        <thead><tr><th>ลำดับ</th><th>รหัสประจำตัว</th><th>คำนำหน้า</th><th>ชื่อ-สกุล</th><th>เลขบัตรประชาชน</th><th>เลื่อนตำแหน่ง</th></tr></thead>
+                        <tbody id="csv-preview-body"></tbody>
+                    </table>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>รหัสประจำตัว</th>
+                            <th>คำนำหน้า</th>
+                            <th>ชื่อ-สกุล</th>
+                            <th>เลขบัตรประชาชน</th>
+                            <th>ระดับชั้น/ห้อง</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body">
+                        <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            `;
+            fetchStudents();
+        }
+
+        async function fetchStudents() {
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST', body: JSON.stringify({ action: 'get_students' })
+                });
+                const result = await response.json();
+                const tbody = document.getElementById('student-table-body');
+                tbody.innerHTML = '';
+
+                if (result.status === 'success' && result.data.length > 0) {
+                    result.data.forEach(stu => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${stu.StudentID}</td>
+                                <td>${stu.Prefix}</td>
+                                <td>${stu.FullName}</td>
+                                <td>${stu.CardID}</td>
+                                <td>${stu.ClassID}</td>
+                                <td>
+                                    <button class="btn-action btn-delete" onclick="deleteStudent('${stu.StudentID}')"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">ยังไม่มีข้อมูลนักเรียน</td></tr>';
+                }
+            } catch (error) {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลนักเรียนได้', 'error');
+            }
+        }
+
+        // โหลดเทมเพลตไฟล์ CSV
+        function downloadCSVTemplate() {
+            const csvContent = "\uFEFFรหัสประจำตัว,คำนำหน้า,ชื่อ,สกุล,เลขบัตรประจำตัวประชาชน\n12345,เด็กชาย,สมชาย,เรียนดี,1101101101101\n12346,เด็กหญิง,สมหญิง,รักเรียน,1101101101102";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "template_students.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // อ่านไฟล์ CSV
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                tempCSVData = [];
+                
+                // เริ่มที่ index 1 เพื่อข้ามหัวตาราง
+                for(let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',');
+                    if(cols.length >= 5) {
+                        tempCSVData.push({
+                            studentId: cols[0].trim(),
+                            prefix: cols[1].trim(),
+                            fullName: cols[2].trim() + ' ' + cols[3].trim(),
+                            cardId: cols[4].trim()
+                        });
+                    }
+                }
+                document.getElementById('csvFileInput').value = ""; // รีเซ็ต input
+                renderCSVPreview();
+            };
+            reader.readAsText(file);
+        }
+
+        // พรีวิว CSV ในตาราง พร้อมปุ่มสลับตำแหน่ง
+        function renderCSVPreview() {
+            document.getElementById('csv-preview-container').style.display = 'block';
+            const tbody = document.getElementById('csv-preview-body');
+            tbody.innerHTML = '';
+            
+            tempCSVData.forEach((row, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${row.studentId}</td>
+                        <td>${row.prefix}</td>
+                        <td>${row.fullName}</td>
+                        <td>${row.cardId}</td>
+                        <td>
+                            <button class="btn-action" style="background:#34495e;" onclick="moveCSVRow(${index}, -1)"><i class="fas fa-arrow-up"></i></button>
+                            <button class="btn-action" style="background:#34495e;" onclick="moveCSVRow(${index}, 1)"><i class="fas fa-arrow-down"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // ฟังก์ชันเลื่อนลำดับนักเรียน
+        function moveCSVRow(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= tempCSVData.length) return; // เกินขอบเขต
+            
+            // สลับตำแหน่ง Array
+            const temp = tempCSVData[index];
+            tempCSVData[index] = tempCSVData[newIndex];
+            tempCSVData[newIndex] = temp;
+            
+            renderCSVPreview(); // วาดตารางใหม่
+        }
+
+        function cancelCSV() {
+            tempCSVData = [];
+            document.getElementById('csv-preview-container').style.display = 'none';
+        }
+
+        // บันทึกข้อมูล CSV ทั้งหมดลงฐานข้อมูล
+        async function saveBulkCSV() {
+            if(tempCSVData.length === 0) return;
+            const selectedClass = document.getElementById('csv_class_select').value;
+            
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // แปลง Array Object เป็น Array Matrix เพื่อส่งไป GAS
+            const dataMatrix = tempCSVData.map(row => [
+                row.studentId, 
+                row.prefix, 
+                row.fullName, 
+                row.cardId, 
+                selectedClass
+            ]);
+
+            const payload = {
+                action: 'add_students_bulk',
+                data: { studentsArray: dataMatrix }
+            };
+
+            try {
+                const resp = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const resData = await resp.json();
+                if(resData.status === 'success') {
+                    Swal.fire('สำเร็จ', \`นำเข้าข้อมูลนักเรียน \${dataMatrix.length} คน เรียบร้อยแล้ว\`, 'success');
+                    cancelCSV();
+                    fetchStudents();
+                }
+            } catch (error) {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+            }
+        }
+
+        function deleteStudent(id) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                confirmButtonText: 'ลบข้อมูล'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    const resp = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_student', data: { StudentID: id } }) });
+                    const resData = await resp.json();
+                    if(resData.status === 'success') {
+                        Swal.fire('ลบแล้ว!', 'ข้อมูลถูกลบเรียบร้อย', 'success');
+                        fetchStudents();
+                    }
                 }
             });
         }
