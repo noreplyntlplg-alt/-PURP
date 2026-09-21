@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARAMS - ระบบบริหารงานทะเบียนและวัดผล</title>
+    <!-- TH Sarabun Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --bg-color: #f4f6f7;
+            --text-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 18px;
+        }
+
+        /* --- Login System --- */
+        #login-container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        }
+
+        .login-box {
+            background: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-box h2 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-size: 32px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 18px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .input-group .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .remember-me input {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-login:hover {
+            background-color: var(--secondary-color);
+        }
+
+        /* --- Dashboard Layout (SPA) --- */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            position: fixed;
+            height: 100%;
+            padding-top: 20px;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li a {
+            display: block;
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 18px;
+        }
+
+        .sidebar-menu li a:hover {
+            background-color: var(--secondary-color);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .sidebar-menu li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        .topbar {
+            background: #fff;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .btn-logout {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-logout:hover {
+            background-color: #c0392b;
+        }
+
+        /* Pages */
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+        
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .page-title { margin-bottom: 20px; color: var(--primary-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; display:inline-block;}
+
+    </style>
+</head>
+<body>
+
+    <!-- ================= Login Page ================= -->
+    <div id="login-container">
+        <div class="login-box">
+            <h2>ARAMS</h2>
+            <p style="margin-bottom: 20px; color: #7f8c8d;">เข้าสู่ระบบ</p>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="ชื่อผู้ใช้">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="รหัสผ่าน">
+                <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
+            </div>
+            <div class="remember-me">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">จดจำการเข้าสู่ระบบ</label>
+            </div>
+            <button class="btn-login" onclick="login()" id="btnLogin">เข้าสู่ระบบ <i class="fas fa-sign-in-alt"></i></button>
+        </div>
+    </div>
+
+    <!-- ================= Main App Container ================= -->
+    <div class="app-container" id="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>ARAMS</h3>
+                <p id="user-name-display" style="font-size: 14px; color:#ccc; margin-top:5px;"></p>
+                <span id="user-role-badge" style="font-size:12px; background:var(--accent-color); padding:2px 8px; border-radius:10px; margin-top:5px; display:inline-block;"></span>
+            </div>
+            <!-- เมนูจะถูกสร้างอัตโนมัติตาม Role -->
+            <ul class="sidebar-menu" id="sidebar-menu"></ul>
+        </div>
+        
+        <div class="main-content">
+            <div class="topbar">
+                <h3 id="topbar-title">ยินดีต้อนรับ</h3>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+            </div>
+            <!-- พื้นที่แสดงเนื้อหาของแต่ละเมนู -->
+            <div id="content-area"></div>
+        </div>
+    </div>
+
+    <!-- ================= Script ================= -->
+    <script>
+        // *** วาง URL ของ Web App จาก Google Apps Script ที่นี่ ***
+        const WEB_APP_URL = 'YOUR_WEB_APP_URL_HERE';
+
+        // โครงสร้างเมนูของแต่ละ Role
+        const roleMenus = {
+            admin: [
+                { id: 'admin-course', icon: 'fa-book', title: 'รายวิชา' },
+                { id: 'admin-student', icon: 'fa-user-graduate', title: 'ทะเบียนนักเรียน' },
+                { id: 'admin-class', icon: 'fa-chalkboard-teacher', title: 'ระดับชั้น' },
+                { id: 'admin-teacher', icon: 'fa-chalkboard', title: 'ทะเบียนคุณครู' },
+                { id: 'admin-academic', icon: 'fa-star', title: 'ทะเบียนฝ่ายวิชาการ' },
+                { id: 'admin-assign', icon: 'fa-tasks', title: 'มอบหมายภาระงาน' },
+                { id: 'admin-setting-t', icon: 'fa-cogs', title: 'ตั้งค่าระบบคุณครู' },
+                { id: 'admin-setting-s', icon: 'fa-cog', title: 'ตั้งค่าระบบนักเรียน' },
+                { id: 'admin-setting-sys', icon: 'fa-sliders-h', title: 'ตั้งค่าระบบ' }
+            ],
+            teacher: [
+                { id: 'teacher-grade', icon: 'fa-edit', title: 'บันทึกคะแนน' },
+                { id: 'teacher-rework', icon: 'fa-tools', title: 'กำหนดงานแก้ตัว' },
+                { id: 'teacher-request', icon: 'fa-envelope-open-text', title: 'คำร้องขอแก้ตัว' }
+            ],
+            student: [
+                { id: 'student-dashboard', icon: 'fa-chart-line', title: 'ผลการเรียนเฉลี่ย' },
+                { id: 'student-score', icon: 'fa-list-alt', title: 'คะแนนเก็บ' },
+                { id: 'student-history', icon: 'fa-history', title: 'ประวัติคำร้องขอแก้ตัว' }
+            ],
+            academic: [
+                { id: 'academic-check', icon: 'fa-search-plus', title: 'ตรวจสอบคะแนนและอนุมัติ' }
+            ]
+        };
+
+        // เริ่มต้นตรวจสอบว่าเคย Login ไว้หรือไม่ (Remember Me)
+        window.onload = function() {
+            const savedSession = localStorage.getItem('arams_session');
+            if (savedSession) {
+                const userData = JSON.parse(savedSession);
+                initApp(userData);
+            }
+        };
+
+        // สลับเปิดปิดตา Password
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            const icon = document.querySelector('.toggle-password');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // ระบบ Login เข้าสู่ระบบ
+        async function login() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const remember = document.getElementById('rememberMe').checked;
+            const btn = document.getElementById('btnLogin');
+
+            if (!user || !pass) {
+                Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน', confirmButtonColor: '#3498db' });
+                return;
+            }
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
+            btn.disabled = true;
+
+            try {
+                // ส่งค่าไปตรวจสอบที่ GAS
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'login',
+                        data: { username: user, password: pass }
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    if (remember) {
+                        localStorage.setItem('arams_session', JSON.stringify(result.userData));
+                    }
+                    initApp(result.userData);
+                } else {
+                    Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: result.message, confirmButtonColor: '#e74c3c' });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดระบบ', text: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', confirmButtonColor: '#e74c3c' });
+            } finally {
+                btn.innerHTML = 'เข้าสู่ระบบ <i class="fas fa-sign-in-alt"></i>';
+                btn.disabled = false;
+            }
+        }
+
+        // โหลดข้อมูลหลัง Login ผ่าน
+        function initApp(userData) {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            
+            document.getElementById('user-name-display').innerText = userData.name;
+            document.getElementById('user-role-badge').innerText = userData.role.toUpperCase();
+
+            // สร้างเมนูตาม Role
+            const menuContainer = document.getElementById('sidebar-menu');
+            const contentArea = document.getElementById('content-area');
+            menuContainer.innerHTML = '';
+            contentArea.innerHTML = '';
+
+            const menus = roleMenus[userData.role];
+            menus.forEach((menu, index) => {
+                // สร้างปุ่มเมนู
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="#" onclick="loadPage('${menu.id}', '${menu.title}')"><i class="fas ${menu.icon}"></i> ${menu.title}</a>`;
+                menuContainer.appendChild(li);
+
+                // สร้างพื้นที่หน้าต่าง (Div) รอไว้
+                const pageDiv = document.createElement('div');
+                pageDiv.id = menu.id;
+                pageDiv.className = 'page-content card';
+                pageDiv.innerHTML = `<h2 class="page-title">${menu.title}</h2><p>กำลังเตรียมระบบย่อย...</p>`;
+                contentArea.appendChild(pageDiv);
+            });
+
+            // เปิดหน้าแรกอัตโนมัติ
+            if (menus.length > 0) {
+                loadPage(menus[0].id, menus[0].title);
+            }
+            
+            // ล้างค่าฟอร์มล็อกอิน
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // ระบบสลับหน้า (SPA - ไม่รีเฟรช)
+        function loadPage(pageId, title) {
+            document.getElementById('topbar-title').innerText = title;
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // ระบบออกจากระบบ (ทำทันที ไม่รีเฟรช)
+        function logout() {
+            Swal.fire({
+                title: 'ออกจากระบบ?',
+                text: "คุณต้องการออกจากระบบใช่หรือไม่?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#bdc3c7',
+                confirmButtonText: 'ใช่, ออกจากระบบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('arams_session');
+                    document.getElementById('app-container').style.display = 'none';
+                    document.getElementById('login-container').style.display = 'flex';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
